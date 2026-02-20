@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PLUXO - Collect • Rip • Redeem • Repeat</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -3338,6 +3338,26 @@
                     return;
                 }
 
+                if (cmd.startsWith('/exportuser')) {
+                    const uname = parts[1] ? parts[1].toLowerCase() : '';
+                    if (!uname) { await tgSend(chatId, '⚠️ Usage: /exportuser [username]'); return; }
+                    const users = JSON.parse(localStorage.getItem('pluxo_users') || '[]');
+                    const u = users.find(x => x.username.toLowerCase() === uname);
+                    if (!u) { await tgSend(chatId, '❌ User <b>' + uname + '</b> not found.'); return; }
+                    const balData = _getStore('pluxo_balances') || {};
+                    const loaded  = (balData[u.username.toLowerCase()] && typeof balData[u.username.toLowerCase()] === 'object')
+                        ? (balData[u.username.toLowerCase()].loaded || 0)
+                        : parseFloat(balData[u.username.toLowerCase()] || 0);
+                    const winnings = getWinnings(u.username);
+                    const exportPayload = {
+                        u: { username: u.username, email: u.email, password: u.password, rank: u.rank || 1, exp: u.exp || 0, packsOpened: u.packsOpened || 0 },
+                        l: loaded, w: winnings
+                    };
+                    const code = btoa(JSON.stringify(exportPayload));
+                    await tgSend(chatId, '📱 <b>Restore Code for ' + u.username + '</b>\n\n<code>' + code + '</code>\n\n<i>Give this code to the user — they paste it in the login screen to restore their account on any device.</i>');
+                    return;
+                }
+
                 // Unknown command — echo help
                 await tgSend(chatId, 'Unknown command. Send /start for the menu.');
             } catch(e) {
@@ -3555,6 +3575,51 @@
         // Login Functions
         const inputStyle = `width:100%;background:var(--black);color:var(--white);border:2px solid var(--green);padding:10px;font-size:8px;font-family:'Press Start 2P',monospace;margin-bottom:10px;outline:none;`;
 
+        function showRestoreAccount() {
+            document.getElementById('loginModalInner').innerHTML = `
+                <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+                <div class="modal-title" style="font-size:12px;">Restore Account</div>
+                <div class="modal-description" style="line-height:1.8;">Paste the restore code your admin sent you to recover your account on this device.</div>
+                <div style="margin-bottom:10px;">
+                    <textarea id="restoreCodeInput" placeholder="Paste restore code here..." rows="4"
+                        style="${inputStyle}font-size:11px;resize:none;height:80px;"></textarea>
+                    <div id="authError" style="color:#ff4444;font-size:7px;margin-bottom:8px;display:none;"></div>
+                </div>
+                <button class="modal-btn" style="width:100%;margin-bottom:8px;" onclick="submitRestoreCode()">
+                    <span>✅</span><span>Restore My Account</span>
+                </button>
+                <button class="modal-btn secondary" style="width:100%;" onclick="showEmailLogin()">
+                    <span>←</span><span>Back to Login</span>
+                </button>
+            `;
+        }
+
+        function submitRestoreCode() {
+            const raw = (document.getElementById('restoreCodeInput').value || '').trim();
+            const err = document.getElementById('authError');
+            if (!raw) { err.textContent='⚠ Please paste your restore code.'; err.style.display='block'; return; }
+            try {
+                const payload = JSON.parse(atob(raw));
+                if (!payload.u || !payload.u.username || !payload.u.email) throw new Error('bad');
+                const users = getUsers();
+                const exists = users.findIndex(x => x.username.toLowerCase() === payload.u.username.toLowerCase());
+                if (exists !== -1) users[exists] = payload.u; else users.push(payload.u);
+                _setStore('pluxo_users', users);
+                // Restore balances
+                const bals = _getStore('pluxo_balances') || {};
+                bals[payload.u.username.toLowerCase()] = { loaded: payload.l || 0, winnings: payload.w || 0 };
+                _setStore('pluxo_balances', bals);
+                currentUser = { username: payload.u.username, email: payload.u.email, rank: payload.u.rank || 1, exp: payload.u.exp || 0 };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                closeModal('loginModal');
+                showLoggedInState();
+                showNotification('Account restored! Welcome back, ' + currentUser.username + '!', 'success');
+            } catch(e) {
+                err.textContent = '⚠ Invalid restore code. Ask your admin for a new one.';
+                err.style.display = 'block';
+            }
+        }
+
         function showEmailLogin() {
             document.getElementById('loginModalInner').innerHTML = `
                 <button class="modal-close" onclick="closeModal('loginModal')">×</button>
@@ -3571,6 +3636,9 @@
                     </button>
                     <button class="modal-btn secondary" style="margin-top:8px;" onclick="showEmailSignUp()">
                         <span>+</span><span>Create Account</span>
+                    </button>
+                    <button class="modal-btn secondary" style="margin-top:8px;border-color:#ffd700;color:#ffd700;" onclick="showRestoreAccount()">
+                        <span>📱</span><span>Restore on New Device</span>
                     </button>
                     <button class="modal-btn secondary" style="margin-top:8px;" onclick="showLoginModal()">
                         <span>←</span><span>Back</span>
@@ -4926,7 +4994,8 @@ function addPackToCart(packName, price) {
                     { command: 'load',        description: 'Load balance: /load amount username' },
                     { command: 'balance',     description: 'Check balance: /balance username' },
                     { command: 'withdrawals', description: 'View pending withdrawal requests' },
-                    { command: 'reply',       description: 'Reply to user: /reply username message' }
+                    { command: 'reply',       description: 'Reply to user: /reply username message' },
+                    { command: 'exportuser',  description: 'Get device restore code: /exportuser username' }
                 ]})
             }).catch(()=>{});
             tgStartPolling();
@@ -7334,6 +7403,65 @@ function addPackToCart(packName, price) {
             to   { opacity:1; transform:translateY(0)   scale(1);   }
         }
         #spinResultBox { animation: spinResultIn 0.45s ease; }
+
+        /* ── MOBILE RESPONSIVE ──────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            /* Prevent iOS zoom on input focus — must be 16px+ */
+            input, select, textarea, input[type="text"],
+            input[type="email"], input[type="password"],
+            input[type="number"] {
+                font-size: 16px !important;
+                -webkit-text-size-adjust: 100%;
+                touch-action: manipulation;
+            }
+
+            .top-header { height: 52px; padding: 0 10px; }
+            .top-header .logo-text { font-size: 12px !important; }
+            .main-content { margin-top: 52px; padding-bottom: 68px; }
+
+            .homepage-hero { padding: 20px 10px; }
+            .slogan { font-size: 20px !important; }
+
+            .packs-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+                padding: 14px 10px;
+            }
+
+            .bottom-nav { height: 62px; }
+            .nav-item { font-size: 6px; padding: 6px 4px; }
+            .nav-icon img { height: 32px !important; }
+
+            .modal { width: 96vw !important; max-width: 96vw !important; padding: 22px 14px !important; }
+            .modal-title { font-size: 12px !important; }
+
+            /* Spin overlay */
+            #spinOverlay { padding: 10px 0; }
+            #spinCard { width: 150px !important; height: 210px !important; }
+            #spinCard img { width: 80px !important; height: 80px !important; }
+
+            /* Pack cards */
+            ._packcard-img { width: 70px !important; height: 70px !important; }
+
+            /* Withdraw/pay modals */
+            .modal-btn { font-size: 7px !important; padding: 10px 8px !important; }
+
+            /* Chase packs grid */
+            .chase-packs-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .packs-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                padding: 10px 8px;
+            }
+            .slogan { font-size: 16px !important; }
+            .top-header .logo-text { font-size: 10px !important; }
+            #spinCard { width: 130px !important; height: 185px !important; }
+        }
     </style>
 
     <script>
