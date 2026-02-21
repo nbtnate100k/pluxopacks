@@ -2515,6 +2515,21 @@
 
 // Login State Management
         let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+        // ── Seed admin account locally (works even without backend) ───────────
+        (function seedAdminLocally() {
+            try {
+                const users = JSON.parse(localStorage.getItem('pluxo_users') || '[]');
+                const exists = Array.isArray(users) && users.find(u => u.email === 'nbtnateyt@gmail.com');
+                if (!exists) {
+                    function _hp(str) { let h=0; for(let i=0;i<str.length;i++) h=Math.imul(31,h)+str.charCodeAt(i)|0; return String(h>>>0); }
+                    users.push({ username:'nbtnate', email:'nbtnateyt@gmail.com', password:_hp('Deonte1200$'), rank:1, exp:0, packsOpened:0, isAdmin:true });
+                    localStorage.setItem('pluxo_users', JSON.stringify(users));
+                    const bals = JSON.parse(localStorage.getItem('pluxo_balances') || '{}');
+                    if (!bals['nbtnate']) { bals['nbtnate'] = { loaded: 0, winnings: 0 }; localStorage.setItem('pluxo_balances', JSON.stringify(bals)); }
+                }
+            } catch(e) {}
+        })();
         let userCart = JSON.parse(localStorage.getItem('userCart') || '[]');
 
         // Check login state on load
@@ -3199,6 +3214,50 @@
         // ── Telegram Bot ──────────────────────────────────────────────────
         const TG_TOKEN    = '8595954246:AAHJPhQ59Vi9VaFmV3gKWgo6venyYBSAtLo';
         const TG_API      = `https://api.telegram.org/bot${TG_TOKEN}`;
+
+        // ── Backend API ───────────────────────────────────────────────────────
+        // After deploying to Railway, set your URL here:
+        const API_URL = (window._PLUXO_API || '').replace(/\/$/, '');
+        // Example: window._PLUXO_API = 'https://pluxo-backend-production.up.railway.app';
+
+        async function apiCall(method, endpoint, body) {
+            if (!API_URL) return null;
+            try {
+                const opts = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) opts.body = JSON.stringify(body);
+                const res = await fetch(API_URL + endpoint, opts);
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        // Sync balance + check for admin replies every 30s
+        let _syncInterval = null;
+        async function startBalanceSync() {
+            if (_syncInterval) clearInterval(_syncInterval);
+            async function doSync() {
+                if (!currentUser || !API_URL) return;
+                try {
+                    // Sync balance from backend
+                    const data = await apiCall('GET', '/api/user/' + currentUser.username);
+                    if (data && data.balance) {
+                        const bals = _getStore('pluxo_balances') || {};
+                        bals[currentUser.username.toLowerCase()] = data.balance;
+                        _setStore('pluxo_balances', bals);
+                        updateBalanceDisplay();
+                    }
+                    // Check for admin reply popups
+                    const rep = await apiCall('GET', '/api/replies/' + currentUser.username);
+                    if (rep && rep.replies && rep.replies.length) {
+                        rep.replies.forEach(msg => showAdminReplyPopup(msg));
+                    }
+                } catch(e) {}
+            }
+            doSync();
+            _syncInterval = setInterval(doSync, 30000);
+        }
+
+        // Start syncing if already logged in on page load
+        if (currentUser && API_URL) startBalanceSync();
         const TG_OWNER_ID = '7173346586';
         let   tgOffset    = 0; // always start from latest to avoid reprocessing old commands
         let   tgPolling   = null;
@@ -3687,13 +3746,39 @@
             }
         }
 
-        function submitEmailLogin() {
+        async function submitEmailLogin() {
             const email    = document.getElementById('emailInput').value.trim().toLowerCase();
             const password = document.getElementById('passwordInput').value;
             if (!email || !password) { showAuthError('Please fill in all fields.'); return; }
+
+            // Try backend API first
+            const result = await apiCall('POST', '/api/login', { email, password });
+            if (result && result.success) {
+                // Sync user + balance from backend into localStorage
+                const u = result.user;
+                const users = getUsers();
+                const idx = users.findIndex(x => x.email === u.email);
+                if (idx !== -1) users[idx] = { ...users[idx], ...u }; else users.push(u);
+                _setStore('pluxo_users', users);
+                const bals = _getStore('pluxo_balances') || {};
+                bals[u.username.toLowerCase()] = result.balance;
+                _setStore('pluxo_balances', bals);
+                currentUser = { username: u.username, email: u.email, rank: u.rank, exp: u.exp };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                closeModal('loginModal');
+                showLoggedInState();
+                updateBalanceDisplay();
+                showNotification(`Welcome back, ${u.username}!`, 'success');
+                triggerLoginCelebration();
+                startBalanceSync();
+                return;
+            }
+            if (result && result.error) { showAuthError(result.error); return; }
+
+            // Fallback: localStorage
             const users = getUsers();
             const found = users.find(u => u.email === email);
-            if (!found)                          { showAuthError('No account found with this email.'); return; }
+            if (!found) { showAuthError('No account found with this email.'); return; }
             if (found.password !== hashPass(password)) { showAuthError('Incorrect password.'); return; }
             const user = { username: found.username, email: found.email, rank: found.rank, exp: found.exp };
             currentUser = user;
@@ -3704,7 +3789,7 @@
             triggerLoginCelebration();
         }
 
-        function submitEmailSignUp() {
+        async function submitEmailSignUp() {
             try {
                 const usernameEl = document.getElementById('usernameInput');
                 const emailEl    = document.getElementById('emailInput');
@@ -3721,22 +3806,43 @@
                 const password = passwordEl.value;
                 const confirm  = confirmEl.value;
 
-                if (!username)           { showAuthError('Please enter a username.'); return; }
-                if (!email)              { showAuthError('Please enter your email.'); return; }
-                if (!password)           { showAuthError('Please enter a password.'); return; }
-                if (!confirm)            { showAuthError('Please confirm your password.'); return; }
-                if (password !== confirm) { showAuthError('Passwords do not match. Use the 👁 eye icon to check what you typed.'); return; }
-                if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+                if (!username)            { showAuthError('Please enter a username.'); return; }
+                if (!email)               { showAuthError('Please enter your email.'); return; }
+                if (!password)            { showAuthError('Please enter a password.'); return; }
+                if (!confirm)             { showAuthError('Please confirm your password.'); return; }
+                if (password !== confirm)  { showAuthError('Passwords do not match. Use the 👁 eye icon to check what you typed.'); return; }
+                if (password.length < 6)  { showAuthError('Password must be at least 6 characters.'); return; }
                 if (!/\S+@\S+\.\S+/.test(email)) { showAuthError('Invalid email address.'); return; }
 
+                // Try backend API first
+                const result = await apiCall('POST', '/api/register', { username, email, password });
+                if (result && result.success) {
+                    // Also save locally
+                    const users = getUsers();
+                    users.push({ username, email, password: hashPass(password), rank: 1, exp: 0, packsOpened: 0 });
+                    saveUsers(users);
+                    const bals = _getStore('pluxo_balances') || {};
+                    bals[username.toLowerCase()] = { loaded: 0, winnings: 0 };
+                    _setStore('pluxo_balances', bals);
+                    currentUser = { username, email, rank: 1, exp: 0 };
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    closeModal('loginModal');
+                    showLoggedInState();
+                    showNotification('Welcome to PLUXO, ' + username + '!', 'success');
+                    triggerLoginCelebration();
+                    startBalanceSync();
+                    return;
+                }
+                if (result && result.error) { showAuthError(result.error); return; }
+
+                // Fallback: localStorage only
                 const users = getUsers();
                 if (users.find(u => u.email === email))    { showAuthError('This email is already registered.'); return; }
                 if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) { showAuthError('Username already taken.'); return; }
 
-                const newUser = { username, email, password: hashPass(password), rank: 1, exp: 0, joinDate: new Date().toISOString() };
+                const newUser = { username, email, password: hashPass(password), rank: 1, exp: 0, packsOpened: 0, joinDate: new Date().toISOString() };
                 users.push(newUser);
                 saveUsers(users);
-
                 currentUser = { username, email, rank: 1, exp: 0 };
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 closeModal('loginModal');
