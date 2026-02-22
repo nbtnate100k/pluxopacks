@@ -2219,7 +2219,7 @@
         <div class="page" id="page-profile">
             <div class="market-page">
                 <div class="profile-header">
-                    <div style="position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+                    <div class="profile-actions header-actions" style="position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
                         <button class="modal-btn" onclick="openWithdrawModal()" style="font-size:7px;padding:8px 14px;">💸 Withdraw</button>
                         <button id="musicToggle" class="modal-btn music-toggle" onclick="toggleMusic()">MUSIC: ON</button>
                     </div>
@@ -4693,6 +4693,7 @@
 
         function _grandOpeningBanner() {
             const b = document.createElement('div');
+            b.className = 'grand-opening';
             b.style.cssText = `
                 grid-column:1/-1;background:linear-gradient(135deg,#0a0a0a,#1a0a00,#0a0a0a);
                 border:2px solid #ffd700;box-shadow:0 0 30px rgba(255,215,0,0.4);
@@ -8672,11 +8673,18 @@ function addPackToCart(packName, price) {
 
             /* ── Header: hide clutter, keep logo + balance + user btn ── */
             .top-header {
-                height: 52px;
-                padding: 0 10px;
-                gap: 0;
+                height: auto;
+                padding: 8px 10px;
+                gap: 6px;
+                flex-direction: column;
+                align-items: flex-start;
+                flex-wrap: wrap;
             }
-            .main-content { margin-top: 52px; padding-bottom: 68px; }
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .main-content { margin-top: 96px; padding-bottom: 68px; }
 
             /* Hide the center section (NEW badge + mystery notif) */
             .header-center { display: none !important; }
@@ -8713,29 +8721,35 @@ function addPackToCart(packName, price) {
 
             /* ── Packs grid ── */
             .packs-grid {
-                gap: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
                 padding: 12px 10px;
             }
             .packs-scroller {
                 display: flex;
-                gap: 12px;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                padding: 4px 2px 12px;
-                -webkit-overflow-scrolling: touch;
+                flex-direction: column;
+                gap: 16px;
+                overflow: visible;
+                scroll-snap-type: y mandatory;
             }
             .packs-scroller > .pack-card,
             .packs-scroller > .coming-soon-card {
-                flex: 0 0 80%;
-                scroll-snap-align: center;
+                flex: 1 1 auto;
+                width: 100%;
+                scroll-snap-align: start;
             }
             .pack-card {
                 filter: brightness(0.95) saturate(0.95);
+                box-shadow: 0 0 12px rgba(0,255,100,0.25) !important;
+                padding: 18px 14px !important;
             }
+            .pack-card img { width: 110px !important; height: 110px !important; }
+            .grand-opening { box-shadow: 0 0 15px rgba(255,200,0,0.2) !important; }
 
             /* ── Bottom nav ── */
-            .bottom-nav { height: 62px; }
-            .nav-item { font-size: 5px; padding: 5px 3px; gap: 3px; }
+            .bottom-nav { height: auto; padding: 12px 0; justify-content: space-around; }
+            .nav-item { font-size: 14px; padding: 5px 3px; gap: 6px; }
             .nav-icon img { height: 28px !important; }
 
             /* ── Modals ── */
@@ -8767,9 +8781,39 @@ function addPackToCart(packName, price) {
             /* ── Homepage ── */
             .homepage-hero { padding: 20px 10px; }
             .slogan { font-size: 18px !important; }
+            .hero-subtitle { max-width: 90%; margin: 0 auto; line-height: 1.4; }
 
             /* ── Tier strip in spin modal ── */
             #spinOverlay .tier-strip { gap: 3px !important; }
+
+            /* ── Profile header fixes ── */
+            .profile-header {
+                grid-template-columns: 1fr;
+                padding: 20px 14px;
+                gap: 14px;
+            }
+            .profile-actions {
+                position: static !important;
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 8px;
+            }
+            .profile-actions .modal-btn,
+            .profile-actions .music-toggle {
+                width: 100%;
+            }
+
+            /* ── Buttons: tap comfort ── */
+            .main-content button,
+            .modal-btn,
+            .spin-claim-btn,
+            .chat-input button {
+                min-height: 52px;
+                font-size: 16px;
+            }
+
+            body { -webkit-tap-highlight-color: transparent; }
         }
 
         @media (max-width: 420px) {
