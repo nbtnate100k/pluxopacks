@@ -625,9 +625,15 @@
         /* Packs Page */
         .packs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-            padding: 40px 20px;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            padding: 40px 24px;
+        }
+
+        .packs-scroller {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 24px;
         }
 
         .pack-item {
@@ -691,6 +697,85 @@
         .pack-price {
             font-size: 12px;
             color: var(--green);
+        }
+
+        /* Premium custom pack cards */
+        .pack-card {
+            position: relative;
+            --pack-tilt: 0deg;
+            --pack-nudge: 0px;
+            --pack-scale: 1;
+            --pack-lift: 0px;
+            --pack-hover-lift: -10px;
+            --pack-hover-scale: 1.03;
+            transform: rotate(var(--pack-tilt, 0deg)) translateY(calc(var(--pack-nudge, 0px) + var(--pack-lift, 0px))) scale(var(--pack-scale, 1));
+            transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease, filter 0.2s ease;
+            will-change: transform, box-shadow, filter;
+            scroll-snap-align: center;
+        }
+
+        .pack-card:hover {
+            --pack-scale: var(--pack-hover-scale);
+            --pack-lift: var(--pack-hover-lift);
+            filter: brightness(1.06) saturate(1.05);
+        }
+
+        .pack-card button {
+            min-height: 48px;
+            transition: transform 0.12s ease, filter 0.12s ease;
+        }
+
+        .pack-card button:active { transform: scale(0.95); }
+
+        .pack-card:hover button {
+            animation: btnPulse 1.5s ease infinite !important;
+        }
+
+        .coming-soon-card {
+            --pack-hover-lift: 0px;
+        }
+
+        .coming-soon-card:hover {
+            --pack-scale: 1;
+            --pack-lift: 0px;
+            filter: none;
+        }
+
+        .pack-card.spark::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 60%);
+            opacity: 0;
+            animation: packSpark 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        .live-energy {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #0b0b0b;
+            border: 1px solid #222;
+            border-radius: 6px;
+            font-size: 7px;
+            color: #7dffb2;
+            letter-spacing: 1px;
+            box-shadow: 0 0 12px rgba(0,255,150,0.25);
+            text-transform: uppercase;
+        }
+
+        .live-energy .dot {
+            width: 6px;
+            height: 6px;
+            background: #ff3333;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255,51,51,0.8);
+            animation: livePulse 1.2s ease-in-out infinite;
         }
 
         /* Expansions Page */
@@ -1678,16 +1763,8 @@
     <header class="top-header">
         <div class="logo" onclick="showPage('home')">
             PLUXO
-            <span class="santa-hat">🎅</span>
-            <span class="beta-tag">CLOSED BETA</span>
         </div>
-        <div class="header-center">
-            <div class="new-badge">NEW</div>
-            <div class="mystery-notification" onclick="showPage('mystery-pack')" style="cursor: pointer;">
-                <span>?</span>
-                <span>Mystery Packs in stock!</span>
-            </div>
-        </div>
+        <div class="header-center"></div>
 <div class="header-right">
             <div class="rank-info" id="rankInfo" style="display: none;">
                 <span id="userRank">RANK 1</span>
@@ -1696,33 +1773,21 @@
                 </div>
                 <span id="userProgress">0 / 500</span>
             </div>
-            <div id="tgStatusDot" title="Click for Admin Panel" onclick="toggleAdminPanel()" style="width:10px;height:10px;border-radius:50%;background:#ff4444;margin-right:8px;flex-shrink:0;display:inline-block;cursor:pointer;"></div>
-            <div id="balanceDisplay" style="display:none;background:#111;border:1px solid #00ff00;padding:4px 10px;font-size:8px;color:#00ff00;font-family:'Press Start 2P',monospace;margin-right:8px;">
+            <div id="balanceDisplay" style="display:none;background:#111;border:1px solid #00ff00;padding:4px 10px;font-size:8px;color:#00ff00;font-family:'Press Start 2P',monospace;margin-right:6px;">
                 $<span id="balanceAmount">0.00</span>
             </div>
-            <button class="user-button" id="userButton" onclick="showWalletModal()" style="display: none;">
-                <span id="userDisplay">@user</span>
-                <span>▼</span>
-                <div class="cart-dropdown" id="cartDropdown">
-                    <div class="cart-header">
-                        <span class="cart-title">Shopping Cart</span>
-                        <span class="cart-count" id="cartCount">0</span>
-                    </div>
-                    <div class="cart-items" id="cartItems">
-                        <div style="text-align: center; color: var(--gray); padding: 20px; font-size: 8px;">
-                            Your cart is empty
-                        </div>
-                    </div>
-                    <div class="cart-total">
-                        <span class="cart-total-label">Total:</span>
-                        <span class="cart-total-amount" id="cartTotal">$0.00</span>
-                    </div>
-                    <div class="cart-actions">
-                        <button class="cart-btn" onclick="checkout()">Checkout</button>
-                        <button class="cart-btn secondary" onclick="clearCart()">Clear</button>
-                    </div>
+            <button id="addFundsBtn" onclick="showWalletModal()" style="display:none;background:#00ff00;color:#000;border:none;padding:5px 10px;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;margin-right:8px;white-space:nowrap;">+ ADD FUNDS</button>
+            <div id="userButton" style="display:none;position:relative;">
+                <button onclick="toggleUserMenu()" style="background:var(--dark-gray);color:var(--green);padding:6px 12px;font-size:7px;border:2px solid var(--green);cursor:pointer;font-family:'Press Start 2P',monospace;display:flex;align-items:center;gap:6px;">
+                    <span id="userDisplay">@user</span><span>▼</span>
+                </button>
+                <div id="userMenuDropdown" style="display:none;position:absolute;top:100%;right:0;background:#0d0d0d;border:2px solid var(--green);min-width:160px;z-index:5000;margin-top:4px;">
+                    <div onclick="showPage('profile');toggleUserMenu();" style="padding:10px 14px;font-size:7px;color:#fff;cursor:pointer;border-bottom:1px solid #222;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">👤 Profile</div>
+                    <div onclick="showWalletModal();toggleUserMenu();" style="padding:10px 14px;font-size:7px;color:#fff;cursor:pointer;border-bottom:1px solid #222;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">💵 Add Funds</div>
+                    <div onclick="openWithdrawModal();toggleUserMenu();" style="padding:10px 14px;font-size:7px;color:#fff;cursor:pointer;border-bottom:1px solid #222;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">💸 Withdraw</div>
+                    <div onclick="doLogout()" style="padding:10px 14px;font-size:7px;color:#ff4444;cursor:pointer;" onmouseover="this.style.background='#1a0000'" onmouseout="this.style.background='transparent'">🚪 Log Out</div>
                 </div>
-            </button>
+            </div>
             <a href="#" class="get-started-btn" id="loginBtn" onclick="showLoginModal(); return false;">
                 <span>→</span>
                 <span>Get started</span>
@@ -2056,29 +2121,15 @@
         <!-- Collection Page -->
         <div class="page" id="page-collection">
             <div class="market-page">
-                <div class="market-header">
-                    <h1 style="font-size: 24px; color: var(--green);">My Collection</h1>
-                    <div class="collection-stats-bar">
-                        <div class="collection-stat" data-stat="total">0</div>
-                        <div style="font-size: 8px; color: var(--gray);">Total Cards</div>
-                        <div class="collection-stat" data-stat="unique">0</div>
-                        <div style="font-size: 8px; color: var(--gray);">Unique Cards</div>
-                        <div class="collection-stat" data-stat="value">$0.00</div>
-                        <div style="font-size: 8px; color: var(--gray);">Collection Value</div>
+                <div class="market-header" style="flex-direction:column;align-items:flex-start;gap:10px;padding:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:8px;">
+                        <h1 style="font-size:18px;color:var(--green);">🏆 Saved Prizes</h1>
+                        <button onclick="showWalletModal()" style="background:#00ff00;color:#000;border:none;padding:8px 14px;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;">+ ADD FUNDS</button>
                     </div>
-                    <input type="text" class="search-bar" placeholder="Search collection..." id="collectionSearch" oninput="filterCollection()">
-                    <div class="market-filters">
-                        <select class="filter-select" onchange="sortCollection(this.value)">
-                            <option value="name">Name A-Z</option>
-                            <option value="price-high">Price High to Low</option>
-                            <option value="price-low">Price Low to High</option>
-                            <option value="rarity">Rarity</option>
-                            <option value="recent">Recently Added</option>
-                        </select>
-                    </div>
+                    <div id="savedPrizesStats" style="display:flex;gap:20px;font-size:7px;color:#aaa;flex-wrap:wrap;"></div>
                 </div>
-                <div class="cards-grid" id="collectionGrid">
-                    <!-- Collection cards will be dynamically added -->
+                <div id="savedPrizesGrid" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;">
+                    <!-- Saved prizes rendered here -->
                 </div>
             </div>
         </div>
@@ -2168,8 +2219,9 @@
         <div class="page" id="page-profile">
             <div class="market-page">
                 <div class="profile-header">
-                    <div style="position:absolute;top:16px;right:16px;">
+                    <div style="position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
                         <button class="modal-btn" onclick="openWithdrawModal()" style="font-size:7px;padding:8px 14px;">💸 Withdraw</button>
+                        <button id="musicToggle" class="modal-btn music-toggle" onclick="toggleMusic()">MUSIC: ON</button>
                     </div>
                     <div class="profile-avatar" id="profileAvatar"><img src="https://i.postimg.cc/KYsC5TyH/OIP-15-removebg-preview.png" style="height:48px;width:auto;vertical-align:middle;"></div>
                     <div class="profile-info">
@@ -2208,6 +2260,38 @@
                         <h2>Top Cards</h2>
                         <div class="cards-grid" id="profileTopCards"></div>
                     </div>
+                    <div class="profile-section full">
+                        <h2>Support Chat</h2>
+                        <div class="support-demo">
+                            <div class="support-demo-title">Example Support Conversation (Demo)</div>
+                        <div class="support-demo-item">
+                            <div class="support-demo-role">dripzer</div>
+                            <div class="support-demo-text">yo my spin froze on the last pack</div>
+                            <div class="support-demo-role admin">Admin</div>
+                            <div class="support-demo-text">Got you. If the spin didn’t complete I’ll add a credit. Tell me the time and pack.</div>
+                        </div>
+                        <div class="support-demo-item">
+                            <div class="support-demo-role">markx2</div>
+                            <div class="support-demo-text">withdraw still pending for new account</div>
+                            <div class="support-demo-role admin">Admin</div>
+                            <div class="support-demo-text">New users can take a little longer. Typical window is 2–7 business days.</div>
+                        </div>
+                        <div class="support-demo-item">
+                            <div class="support-demo-role">walkdowncat</div>
+                            <div class="support-demo-text">chose shipping on a prize, do i get tracking?</div>
+                            <div class="support-demo-role admin">Admin</div>
+                            <div class="support-demo-text">Yes. Once it ships you’ll see a tracking update. Delivery requires signature.</div>
+                        </div>
+                        </div>
+                        <div class="chat-header">
+                            <div id="chatTyping" class="chat-typing">Admin is typing<span class="dots"></span></div>
+                        </div>
+                        <div id="chatMessages" class="chat-messages"></div>
+                        <div class="chat-input">
+                            <input id="chatInput" type="text" placeholder="Type your message..." maxlength="240" onkeydown="if(event.key==='Enter'){handleSupportSend();}">
+                            <button id="chatSend" type="button" onclick="handleSupportSend()">SEND</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2225,7 +2309,7 @@
         </div>
         <div class="nav-item" onclick="showPage('collection')">
             <div class="nav-icon"><img src="https://i.postimg.cc/k4XLQyZL/Cartoon-school-book-emoji-expression-damask-education-expressions-408403-wh1200-removebg-preview.png" style="height:48px;width:auto;vertical-align:middle;"></div>
-            <div>Collection</div>
+            <div>Saved Prizes</div>
         </div>
         <div class="nav-item" onclick="showPage('profile')">
             <div class="nav-icon"><img src="https://i.postimg.cc/KYsC5TyH/OIP-15-removebg-preview.png" style="height:48px;width:auto;vertical-align:middle;"></div>
@@ -2250,28 +2334,7 @@
     </div>
 
     <!-- Admin Panel -->
-    <div id="adminPanel" style="display:none;position:fixed;top:80px;right:12px;z-index:19999;background:#0d0d0d;border:2px solid #00ff00;padding:14px;font-family:'Press Start 2P',monospace;width:280px;font-size:7px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="color:#00ff00;font-size:8px;">⚙ ADMIN</span>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <button onclick="tgPoll()" style="background:#111;color:#00ff00;border:1px solid #00ff00;padding:4px 8px;font-family:'Press Start 2P',monospace;font-size:6px;cursor:pointer;">↻ Poll</button>
-                <button onclick="toggleAdminPanel()" style="background:transparent;color:#666;border:none;font-size:14px;cursor:pointer;">×</button>
-            </div>
-        </div>
-
-        <div id="botLastPoll" style="color:#555;margin-bottom:8px;">Last poll: —</div>
-
-        <div style="margin-bottom:10px;">
-            <div style="color:#888;margin-bottom:6px;">MANUAL LOAD BALANCE</div>
-            <input id="adminLoadAmt" type="number" placeholder="Amount ($)" style="width:100%;background:#000;color:#fff;border:1px solid #333;padding:6px;font-family:'Press Start 2P',monospace;font-size:7px;outline:none;margin-bottom:6px;">
-            <input id="adminLoadUser" type="text" placeholder="Username" style="width:100%;background:#000;color:#fff;border:1px solid #333;padding:6px;font-family:'Press Start 2P',monospace;font-size:7px;outline:none;margin-bottom:6px;">
-            <button onclick="adminLoad()" style="width:100%;background:#00ff00;color:#000;border:none;padding:7px;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;">LOAD</button>
-            <div id="adminLoadResult" style="color:#00ff00;margin-top:4px;min-height:12px;"></div>
-        </div>
-
-        <div style="color:#888;margin-bottom:4px;">BOT LOG</div>
-        <div id="botLogBox" style="background:#000;border:1px solid #1a1a1a;padding:6px;height:110px;overflow-y:auto;"></div>
-    </div>
+    <!-- Admin panel removed — bot runs on Railway 24/7 -->
 
     <div class="modal-overlay" id="loginModal">
         <div class="modal login-modal" id="loginModalInner">
@@ -2384,8 +2447,7 @@
                 } else if (pageName === 'packs') {
                     generatePacks();
                 } else if (pageName === 'collection') {
-                    generateCollectionPage();
-                    updateCollectionStats();
+                    renderSavedPrizes();
                 } else if (pageName === 'wishlist') {
                     generateWishlistPage();
                 } else if (pageName === 'stats') {
@@ -2485,6 +2547,75 @@
         }
         function addWinnings(username, amount) { setWinnings(username, getWinnings(username) + (parseFloat(amount) || 0)); }
 
+        // ── Daily win limit ($2,500) ──────────────────────────────────────────
+        const DAILY_WIN_LIMIT = 2500;
+
+        function getDailyWinData(username) {
+            const key = 'pluxo_dailywin_' + username.toLowerCase();
+            try { return JSON.parse(localStorage.getItem(key) || '{"total":0,"day":0}'); }
+            catch(e) { return { total: 0, day: 0 }; }
+        }
+        function addDailyWin(username, amount) {
+            const key  = 'pluxo_dailywin_' + username.toLowerCase();
+            const today = Math.floor(Date.now() / 86400000);
+            const d    = getDailyWinData(username);
+            const total = (d.day === today ? d.total : 0) + amount;
+            localStorage.setItem(key, JSON.stringify({ total, day: today }));
+            return total;
+        }
+        function getDailyWinTotal(username) {
+            const today = Math.floor(Date.now() / 86400000);
+            const d     = getDailyWinData(username);
+            return d.day === today ? d.total : 0;
+        }
+
+        // Lockout: blocks pack purchases for 24h after hitting limit
+        function getLockout(username) {
+            const v = localStorage.getItem('pluxo_lockout_' + username.toLowerCase());
+            return v ? parseInt(v) : 0;
+        }
+        function setLockout(username) {
+            localStorage.setItem('pluxo_lockout_' + username.toLowerCase(), String(Date.now() + 86400000));
+        }
+        function isLockedOut(username) {
+            return getLockout(username) > Date.now();
+        }
+        function lockoutTimeLeft(username) {
+            const rem = getLockout(username) - Date.now();
+            if (rem <= 0) return '';
+            const h = Math.floor(rem / 3600000);
+            const m = Math.floor((rem % 3600000) / 60000);
+            return `${h}h ${m}m`;
+        }
+
+        function showDailyLimitPopup() {
+            const timeLeft = currentUser ? lockoutTimeLeft(currentUser.username) : '';
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.97);display:flex;align-items:center;justify-content:center;font-family:"Press Start 2P",monospace;';
+            overlay.innerHTML = `
+                <div style="text-align:center;padding:30px 20px;max-width:340px;border:3px solid #ff4444;background:#0d0000;">
+                    <div style="font-size:32px;margin-bottom:16px;">🛑</div>
+                    <div style="font-size:12px;color:#ff4444;margin-bottom:14px;letter-spacing:2px;">DAILY LIMIT HIT</div>
+                    <div style="font-size:8px;color:#fff;line-height:2;margin-bottom:14px;">
+                        Please stop — you have hit the<br>
+                        <span style="color:#ffd700;">$2,500 daily win limit.</span>
+                    </div>
+                    <div style="font-size:7px;color:#aaa;line-height:2;margin-bottom:20px;">
+                        Cash out your winnings and come back.<br>
+                        ${timeLeft ? `<span style="color:#00ff00;">Resets in: <b>${timeLeft}</b></span>` : ''}
+                    </div>
+                    <button onclick="this.closest('div[style]').parentElement.remove();openWithdrawModal();" 
+                        style="background:#00ff00;color:#000;border:none;padding:12px 0;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;width:100%;margin-bottom:8px;">
+                        💸 CASH OUT NOW
+                    </button>
+                    <button onclick="this.closest('div[style]').parentElement.remove();"
+                        style="background:transparent;color:#555;border:1px solid #333;padding:8px 0;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;width:100%;">
+                        Close
+                    </button>
+                </div>`;
+            document.body.appendChild(overlay);
+        }
+
         // Total spendable = loaded + winnings
         function getBalance(username) { return getLoaded(username) + getWinnings(username); }
 
@@ -2514,7 +2645,17 @@
         }
 
 // Login State Management
-        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        let currentUser = (function() {
+            try {
+                const u = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (!u || !u.username || !u.email) { localStorage.removeItem('currentUser'); return null; }
+                // Verify the account still exists
+                const users = JSON.parse(localStorage.getItem('pluxo_users') || '[]');
+                const found = Array.isArray(users) && users.find(x => x.email === u.email && x.username === u.username);
+                if (!found) { localStorage.removeItem('currentUser'); return null; }
+                return u;
+            } catch(e) { localStorage.removeItem('currentUser'); return null; }
+        })();
 
         // ── Seed admin account locally (works even without backend) ───────────
         (function seedAdminLocally() {
@@ -2546,6 +2687,7 @@
             document.getElementById('rankInfo').style.display = 'flex';
             document.getElementById('userButton').style.display = 'flex';
             document.getElementById('loginBtn').style.display = 'none';
+            const _af = document.getElementById('addFundsBtn'); if (_af) _af.style.display = 'block';
 
             // Update user info
             document.getElementById('userDisplay').textContent = `@${currentUser.username}`;
@@ -2567,9 +2709,10 @@
             const _pWinnings = document.getElementById('profileStatWinnings');
             if (_pName)     _pName.textContent     = '@' + currentUser.username;
             if (_pEmail)    _pEmail.textContent    = currentUser.email || '';
-            if (_pPacks)    _pPacks.textContent    = parseInt(localStorage.getItem('packsOpened') || '0');
-            if (_pBalance)  _pBalance.textContent  = '$' + getBalance(currentUser.username).toFixed(2);
-            if (_pWinnings) _pWinnings.textContent = '$' + getWinnings(currentUser.username).toFixed(2);
+            const _packsOpened = parseInt(localStorage.getItem('packsOpened') || '0');
+            if (_pPacks)    setStatValue(_pPacks, _packsOpened, 'int', true);
+            if (_pBalance)  setStatValue(_pBalance, getBalance(currentUser.username), 'currency', true);
+            if (_pWinnings) setStatValue(_pWinnings, getWinnings(currentUser.username), 'currency', true);
             
             // Update progress
             const progress = (currentUser.exp || 0) % 500;
@@ -2578,11 +2721,33 @@
             document.getElementById('userProgress').textContent = `${progress} / 500`;
         }
 
+        function toggleUserMenu() {
+            const d = document.getElementById('userMenuDropdown');
+            if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        }
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const btn = document.getElementById('userButton');
+            if (btn && !btn.contains(e.target)) {
+                const d = document.getElementById('userMenuDropdown');
+                if (d) d.style.display = 'none';
+            }
+        });
+
+        function doLogout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showLoggedOutState();
+            showNotification('Logged out successfully.', 'success');
+            showPage('home');
+        }
+
         function showLoggedOutState() {
             document.getElementById('rankInfo').style.display = 'none';
             document.getElementById('userButton').style.display = 'none';
             document.getElementById('loginBtn').style.display = 'flex';
             document.getElementById('balanceDisplay').style.display = 'none';
+            const _af = document.getElementById('addFundsBtn'); if (_af) _af.style.display = 'none';
             const btn = document.getElementById('purchasePackBtn');
             const msg = document.getElementById('purchaseLoginMsg');
             if (btn) { btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed'; }
@@ -2838,10 +3003,10 @@
             const popup = document.getElementById('paySuccessPopup');
             popup.style.display = 'flex';
             document.getElementById('paySuccessIcon').textContent = '🎉';
-            document.getElementById('paySuccessTitle').textContent = 'PAYMENT RECEIVED';
+            document.getElementById('paySuccessTitle').textContent = 'FUNDS REQUEST RECEIVED';
             document.getElementById('paySuccessTitle').style.color = '#00ff00';
             document.getElementById('paySuccessAmount').textContent = '$' + parseFloat(amount).toFixed(2);
-            document.getElementById('paySuccessSub').textContent = 'Your balance will be loaded shortly.\nYou will be notified once confirmed.';
+            document.getElementById('paySuccessSub').textContent = 'Please wait until admin approve your funds request.\nShouldn\'t take longer than 1-2 hours.';
             document.getElementById('paySuccessInner').style.animation = 'none';
             requestAnimationFrame(() => { document.getElementById('paySuccessInner').style.animation = 'paySuccessAnim 0.6s cubic-bezier(0.34,1.56,0.64,1)'; });
             launchConfetti();
@@ -2892,14 +3057,29 @@
             { name: '$10,000 Cash',      value: 10000, display: '$10,000 Cash',          img: 'https://i.postimg.cc/NjBHrkcg/R-(2).png' },
         ];
 
-        // Shuffled queue so every rainbow prize appears before any repeats
+        // ── $10,000 one-time global prize ────────────────────────────────────
+        function is10kClaimed() {
+            return localStorage.getItem('pluxo_10k_claimed') === '1';
+        }
+        function claim10k() {
+            localStorage.setItem('pluxo_10k_claimed', '1');
+        }
+
+        // Shuffled queue — $10k removed if already claimed by anyone on this device/network
         let _rainbowQueue = [];
         function pickRainbowPrize() {
+            const available = is10kClaimed()
+                ? RAINBOW_PRIZES.filter(p => p.name !== '$10,000 Cash')
+                : RAINBOW_PRIZES;
             if (_rainbowQueue.length === 0) {
-                // Refill and shuffle a fresh deck
-                _rainbowQueue = [...RAINBOW_PRIZES].sort(() => Math.random() - 0.5);
+                _rainbowQueue = [...available].sort(() => Math.random() - 0.5);
             }
-            return _rainbowQueue.pop();
+            // Make sure no $10k if claimed
+            let pick = _rainbowQueue.pop();
+            if (pick && pick.name === '$10,000 Cash' && is10kClaimed()) {
+                pick = available[Math.floor(Math.random() * available.length)];
+            }
+            return pick || available[0];
         }
 
         // ── EXP & Rank System ─────────────────────────────────────────────
@@ -4524,54 +4704,253 @@
                 <div style="font-size:7px;color:#fff;letter-spacing:1px;margin-bottom:10px;">FEB 20, 2026 — MAR 2, 2026</div>
                 <div style="background:#111;border:1px solid #ffd70066;padding:10px 8px;border-radius:2px;margin-bottom:10px;">
                     <div style="font-size:7px;color:#00ff00;margin-bottom:6px;">✅ NO CHEATS &nbsp;•&nbsp; NO SCAMS &nbsp;•&nbsp; NO BS</div>
-                    <div style="font-size:6px;color:#ccc;line-height:2;">
-                        Don't win your money back on your third pack?<br>
-                        <span style="color:#ffd700;font-size:7px;">Don't worry, you welcome gift is</span><br>
-                        <span style="color:#00ff00;font-size:8px;">💸 GUARANTEED 70% of your money back</span><br>
-                        <span style="color:#aaa;">or full amount credited — contact support</span>
+                    <div style="font-size:6px;color:#ccc;line-height:2.2;">
+                        Didn't like what you pulled? <span style="color:#ffd700;">We'll fix it.</span><br>
+                        <span style="color:#00ff00;font-size:7px;">No weird policies. No runaround.</span><br>
+                        3 packs in and nothing? Hit support — we sort you out. Simple.
                     </div>
                 </div>
-                <div style="font-size:6px;color:#ffd700;animation:pulse 1.5s ease infinite;">⚡ LIMITED TIME — GRAND OPENING ODDS ACTIVE ⚡</div>
+                <div style="font-size:6px;color:#ffd700;animation:pulse 1.5s ease infinite;">⚡ GRAND OPENING — STACKED ODDS — RUN IT BACK ⚡</div>
+                <div style="font-size:5px;color:#555;margin-top:8px;letter-spacing:1px;">Built by real players. No bot odds. — NBTNate</div>
             `;
             return b;
         }
 
-        function _buildPackCard(pack, index) {
-            const card = document.createElement('div');
-            card.style.cssText = `
-                background:linear-gradient(145deg,${pack.c1},${pack.c2}20);
-                border:2px solid ${pack.c2};box-shadow:0 0 14px ${pack.c2}44;
-                cursor:pointer;padding:18px 14px 14px;
-                display:flex;flex-direction:column;align-items:center;gap:6px;
-                transition:transform 0.18s,box-shadow 0.18s;
-                border-radius:6px;animation:fadeIn 0.4s ease both;
-                animation-delay:${index*0.07}s;overflow:hidden;position:relative;
+        let liveEnergyTimer = null;
+        let liveEnergyValue = null;
+        function _liveEnergyBar() {
+            const bar = document.createElement('div');
+            bar.className = 'live-energy';
+            bar.innerHTML = `
+                <span class="dot"></span>
+                <span class="live-energy-text">23 players opening now</span>
             `;
-            card.onmouseenter = () => { card.style.transform='translateY(-6px) scale(1.04)'; card.style.boxShadow=`0 0 36px ${pack.c2}aa`; };
-            card.onmouseleave = () => { card.style.transform=''; card.style.boxShadow=`0 0 14px ${pack.c2}44`; };
+            return bar;
+        }
+
+        function startLiveEnergyTicker() {
+            const nodes = document.querySelectorAll('.live-energy-text');
+            if (!nodes.length) return;
+            const templates = [
+                (n) => `${n} players opening now`,
+                (n) => `${n} packs ripped in the last 10 min`,
+                (n) => `${n} live pulls happening`,
+                (n) => `Live drops: ${n} just hit`
+            ];
+            const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+            const update = () => {
+                const delta = Math.floor(Math.random() * 7) - 3; // -3..3
+                liveEnergyValue = liveEnergyValue == null
+                    ? Math.floor(Math.random() * 18) + 18
+                    : clamp(liveEnergyValue + delta, 12, 46);
+                const template = templates[Math.floor(Math.random() * templates.length)];
+                nodes.forEach(node => { animateLiveCounter(node, liveEnergyValue, template); });
+                const nextDelay = 10000 + Math.floor(Math.random() * 10000);
+                liveEnergyTimer = setTimeout(update, nextDelay);
+            };
+            if (liveEnergyTimer) clearTimeout(liveEnergyTimer);
+            update();
+        }
+
+        // Per-pack personality: tilt, glow strength, button shape, animation, vertical stagger
+        const PACK_PERSONALITY = [
+            { tilt: '0deg',   glowMult: 1.4, btnRadius: '5px',  btnAnim: 'btnPulse 2s ease infinite',    featured: true,  nudge: '0px'   }, // Mega Million — FEATURED + strong glow
+            { tilt: '2deg',   glowMult: 0.6, btnRadius: '20px', btnAnim: 'none',                          featured: false, nudge: '14px'  }, // Gold Fish — tilted, nudged down
+            { tilt: '-1.5deg',glowMult: 0.85,btnRadius: '3px',  btnAnim: 'btnWiggle 3s ease infinite',    featured: false, nudge: '-8px'  }, // Sprinkle Poney — nudged up
+            { tilt: '0deg',   glowMult: 1.2, btnRadius: '2px',  btnAnim: 'btnBolt 1.8s ease infinite',    featured: false, nudge: '10px'  }, // Thunder Vault
+            { tilt: '1deg',   glowMult: 0.75,btnRadius: '12px', btnAnim: 'none',                          featured: false, nudge: '-5px'  }, // Cosmic Drift
+            { tilt: '0deg',   glowMult: 0.5, btnRadius: '0px',  btnAnim: 'none',                          featured: false, nudge: '18px'  }, // Shadow Loot — lowest glow, nudged down most
+            { tilt: '-1deg',  glowMult: 1.0, btnRadius: '8px',  btnAnim: 'btnShine 2.5s ease infinite',   featured: false, nudge: '-10px' }, // Diamond Surge — nudged up
+            { tilt: '1.5deg', glowMult: 1.3, btnRadius: '4px',  btnAnim: 'btnFlicker 1.5s ease infinite', featured: false, nudge: '6px'   }, // Neon Blaze
+        ];
+
+        function _buildPackCard(pack, index) {
+            const p = PACK_PERSONALITY[index] || { tilt:'0deg', glowMult:1, btnRadius:'5px', btnAnim:'none', featured:false };
+            const isFeatured = p.featured;
+            const glowSize = Math.round(20 * p.glowMult);
+            const baseGlow = Math.max(5, Math.round(glowSize * 0.6));
+            const hoverGlow = Math.max(14, Math.round(glowSize * 1.8));
+            const card = document.createElement('div');
+            card.className = 'pack-card';
+            if (isFeatured) card.classList.add('is-featured');
+
+            const borderW = isFeatured ? '3px' : index % 3 === 0 ? '2px' : '1.5px';
+            card.style.cssText = `
+                background:linear-gradient(${155+index*8}deg,${pack.c1},${pack.c2}${isFeatured?'40':'28'},${pack.c1});
+                border:${borderW} solid ${pack.c2};
+                box-shadow:0 0 ${baseGlow}px ${pack.c2}26, inset 0 0 40px rgba(0,0,0,0.35), inset 0 12px 18px rgba(0,0,0,0.35);
+                cursor:pointer;padding:${isFeatured?'28px 22px 20px':'24px 18px 18px'};
+                display:flex;flex-direction:column;align-items:center;gap:10px;
+                border-radius:${isFeatured?'14px': [10,12,8,10,14,6,10,9][index]+'px'};
+                animation:packCardIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+                animation-delay:${index*0.1}s;overflow:hidden;position:relative;
+                ${isFeatured ? 'z-index:2;' : ''}
+            `;
+            card.style.setProperty('--pack-tilt', p.tilt);
+            card.style.setProperty('--pack-nudge', p.nudge || '0px');
+            card.style.setProperty('--pack-hover-lift', isFeatured ? '-16px' : '-11px');
+            card.style.setProperty('--pack-hover-scale', isFeatured ? '1.04' : '1.03');
+
+            card.addEventListener('animationend', (e) => {
+                if (e.animationName !== 'packCardIn') return;
+                card.style.animation = `packFloat ${5.6 + index * 0.25}s ease-in-out infinite`;
+                card.style.animationDelay = `${index * 0.2}s`;
+            });
+
+            // Grain texture overlay
+            card.innerHTML = `<div style="position:absolute;inset:0;opacity:0.04;pointer-events:none;
+                background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');
+                border-radius:inherit;"></div>`;
+
+            // Featured badge + shimmer sweep
+            if (isFeatured) {
+                card.innerHTML += `<div style="position:absolute;top:10px;left:-1px;background:${pack.c2};color:#000;font-family:'Press Start 2P',monospace;font-size:5px;padding:4px 10px;border-radius:0 4px 4px 0;font-weight:bold;letter-spacing:1px;">⭐ FEATURED</div>`;
+                card.innerHTML += `<div style="position:absolute;inset:0;pointer-events:none;border-radius:inherit;overflow:hidden;">
+                    <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;
+                        background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.07) 50%,transparent 60%);
+                        animation:featuredShimmer 5s ease-in-out infinite;"></div>
+                </div>`;
+            }
+
+            // Corner glow — slightly offset per card for asymmetry
+            const glowOffsetX = [-40, -20, -50, -35, -45, -30, -40, -25][index] || -40;
+            const glowOffsetY = [-40, -50, -30, -45, -40, -35, -20, -45][index] || -40;
+            card.innerHTML += `<div style="position:absolute;top:${glowOffsetY}px;right:${glowOffsetX}px;width:${80+index*8}px;height:${80+index*8}px;background:radial-gradient(circle,${pack.c2}${isFeatured?'66':'44'},transparent 70%);pointer-events:none;border-radius:50%;"></div>`;
+
+            card.onmouseenter = () => {
+                card.style.boxShadow = `0 ${isFeatured?22:16}px ${isFeatured?54:38}px rgba(0,0,0,0.65), 0 0 ${hoverGlow}px ${pack.c2}cc, inset 0 0 34px rgba(0,0,0,0.28), inset 0 12px 18px rgba(0,0,0,0.32)`;
+            };
+            card.onmouseleave = () => {
+                card.style.boxShadow = `0 0 ${baseGlow}px ${pack.c2}26, inset 0 0 40px rgba(0,0,0,0.35), inset 0 12px 18px rgba(0,0,0,0.35)`;
+            };
+
             const tickerText = pack.promo.join('  •  ');
-            card.innerHTML = `
-                <img src="${pack.img}" style="width:90px;height:90px;object-fit:contain;margin-bottom:4px;drop-shadow:0 0 12px ${pack.c2};" loading="lazy">
-                <div style="font-size:9px;color:${pack.tc};font-weight:bold;text-align:center;letter-spacing:1px;line-height:1.6;">${pack.name}</div>
-                <div style="font-size:7px;color:${pack.c2}cc;letter-spacing:2px;margin-bottom:2px;">${pack.desc}</div>
-                <div style="width:100%;background:rgba(0,0,0,0.5);border:1px solid ${pack.c2}44;
-                    border-radius:2px;padding:4px 0;overflow:hidden;margin:3px 0;">
-                    <div style="white-space:nowrap;display:inline-block;
-                        animation:promoScroll 12s linear infinite;
-                        font-size:5px;color:${pack.tc};letter-spacing:1px;padding-left:100%;">
-                        ${tickerText} &nbsp;&nbsp;&nbsp; ${tickerText}
+            const imgSize = isFeatured ? 145 : 130;
+            const btnText = ['OPEN PACK','LET\'S GO','SPIN IT','CHARGE UP','LAUNCH','GO DARK','SURGE','BLAZE IT'][index] || 'OPEN PACK';
+
+            card.innerHTML += `
+                <img src="${pack.img}" style="width:${imgSize}px;height:${imgSize}px;object-fit:contain;filter:drop-shadow(0 0 ${isFeatured?22:16}px ${pack.c2});animation:imgFloat ${3.5+index*0.3}s ease-in-out infinite;animation-delay:${index*0.25}s;margin-top:${isFeatured?8:0}px;" loading="lazy" decoding="async">
+                <div style="font-size:${isFeatured?11:10}px;color:${pack.tc};font-weight:bold;text-align:center;letter-spacing:1px;line-height:1.7;text-shadow:0 0 12px ${pack.c2}88;">${pack.name}</div>
+                <div style="font-size:6px;color:${pack.c2};letter-spacing:${0.8+index*0.1}px;opacity:${0.7+index*0.04};">${pack.desc}</div>
+                <div style="width:100%;background:rgba(0,0,0,0.6);border:1px solid ${pack.c2}33;border-radius:3px;padding:5px 0;overflow:hidden;">
+                    <div style="white-space:nowrap;display:inline-block;animation:promoScroll ${14+index*0.8}s linear infinite;font-size:5px;color:${pack.tc}cc;letter-spacing:1px;padding-left:100%;">
+                        ${tickerText} &nbsp;&nbsp;&nbsp;&nbsp; ${tickerText}
                     </div>
                 </div>
-                <div style="font-size:20px;color:#fff;font-weight:bold;margin:4px 0;">$${pack.price}.00</div>
+                <div style="font-size:${isFeatured?26:24}px;color:#fff;font-weight:900;letter-spacing:0.5px;text-shadow:0 0 18px ${pack.c2};">$${pack.price}.00</div>
                 <button onclick="buyCustomPack(${index},event)" style="
-                    background:linear-gradient(135deg,${pack.c2},${pack.c2}bb);
-                    color:#000;border:none;padding:11px 0;
-                    font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;
-                    width:100%;border-radius:3px;font-weight:bold;letter-spacing:1px;
-                    box-shadow:0 4px 12px ${pack.c2}66;
-                ">OPEN PACK</button>
+                    background:linear-gradient(${135+index*15}deg,${pack.c2},${pack.c2}cc);
+                    color:#000;border:none;padding:${12+index%3}px 0;
+                    font-family:'Press Start 2P',monospace;font-size:${isFeatured?9:8}px;cursor:pointer;
+                    width:100%;border-radius:${p.btnRadius};font-weight:bold;letter-spacing:${1+index%2}px;
+                    box-shadow:0 5px 20px ${pack.c2}88;
+                    animation:${p.btnAnim};
+                    transition:transform 0.1s,filter 0.1s;
+                " onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform=''"
+                   ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform=''">${btnText}</button>
             `;
             return card;
+        }
+
+        // ── Coming Soon Packs ─────────────────────────────────────────────────
+        const COMING_SOON_PACKS = [
+            // ── Grand Prize Packs ──
+            { name: 'Dream Wheels Pack',   emoji: '🚗', c1:'#0a0a00', c2:'#ff2200', prize: 'WIN A CAR',         desc: 'LUXURY GRAND PRIZE',    hint: 'One lucky winner drives home in style. Real car. Real keys.' },
+            { name: 'Dream Home Pack',     emoji: '🏠', c1:'#000a05', c2:'#00ff88', prize: 'WIN HOUSE KEYS',     desc: 'REAL ESTATE GRAND PRIZE',hint: 'Keys to a new home — fully covered. Own it outright.' },
+            { name: 'Global Escape Pack',  emoji: '✈️', c1:'#00001a', c2:'#00ccff', prize: 'FULLY PAID TRIP',    desc: 'ALL EXPENSES COVERED',   hint: 'Hotels • Flights • Food • Transport — everything paid for you.' },
+            { name: '??? TOP SECRET ???',  emoji: '🔒', c1:'#050505', c2:'#ff0000', prize: '??? CLASSIFIED ???', desc: 'TOP SECRET',             hint: 'We can\'t tell you what\'s inside. But it\'s big. Very big.' },
+            // ── 30 More ──
+            { name: 'Crystal Fortune Pack',emoji: '🔮', c1:'#100020', c2:'#dd88ff', prize: '???', desc: 'COMING SOON', hint: 'Pure crystal energy. Legendary drops incoming.' },
+            { name: 'Dark Matter Pack',    emoji: '🌑', c1:'#000005', c2:'#4444ff', prize: '???', desc: 'COMING SOON', hint: 'What lurks in the void? Something enormous.' },
+            { name: 'Inferno Pack',        emoji: '🌋', c1:'#1a0000', c2:'#ff6600', prize: '???', desc: 'COMING SOON', hint: 'Born from the heat. Only the bold survive.' },
+            { name: 'Arctic Frost Pack',   emoji: '❄️', c1:'#000d1a', c2:'#aaddff', prize: '???', desc: 'COMING SOON', hint: 'Cold-blooded prizes. Ice cold wins.' },
+            { name: 'Solar Flare Pack',    emoji: '☀️', c1:'#1a0a00', c2:'#ffaa00', prize: '???', desc: 'COMING SOON', hint: 'Powered by the sun. Explosive rewards.' },
+            { name: 'Lunar Eclipse Pack',  emoji: '🌕', c1:'#05050f', c2:'#9966ff', prize: '???', desc: 'COMING SOON', hint: 'Once in a lifetime alignment. Rare drops.' },
+            { name: 'Storm Surge Pack',    emoji: '⛈️', c1:'#001020', c2:'#00aaff', prize: '???', desc: 'COMING SOON', hint: 'The storm is coming. Are you ready?' },
+            { name: 'Phantom Pack',        emoji: '👻', c1:'#080808', c2:'#cccccc', prize: '???', desc: 'COMING SOON', hint: 'Now you see it, now you don\'t. Ghostly wins.' },
+            { name: 'Venom Pack',          emoji: '🐍', c1:'#001a00', c2:'#44ff44', prize: '???', desc: 'COMING SOON', hint: 'Lethal odds. Toxic rewards. Deadly prizes.' },
+            { name: 'Titan Pack',          emoji: '⚙️', c1:'#0f0f0f', c2:'#888888', prize: '???', desc: 'COMING SOON', hint: 'Built different. Engineered to win big.' },
+            { name: 'Nova Pack',           emoji: '💥', c1:'#0a000a', c2:'#ff44ff', prize: '???', desc: 'COMING SOON', hint: 'A star being born. Explosive energy inside.' },
+            { name: 'Galaxy Brain Pack',   emoji: '🧠', c1:'#050015', c2:'#7766ff', prize: '???', desc: 'COMING SOON', hint: 'For big thinkers. Bigger prize pool.' },
+            { name: 'Obsidian Pack',       emoji: '🖤', c1:'#050505', c2:'#555555', prize: '???', desc: 'COMING SOON', hint: 'Forged in darkness. Razor sharp value.' },
+            { name: 'Emerald Rush Pack',   emoji: '💚', c1:'#001a05', c2:'#00cc66', prize: '???', desc: 'COMING SOON', hint: 'Green means go. Rush the pack before it\'s gone.' },
+            { name: 'Sapphire Storm Pack', emoji: '💎', c1:'#000a1a', c2:'#0066ff', prize: '???', desc: 'COMING SOON', hint: 'Rare as sapphire. Wins as precious as gems.' },
+            { name: 'Ruby Rage Pack',      emoji: '❤️', c1:'#1a0000', c2:'#cc0000', prize: '???', desc: 'COMING SOON', hint: 'Fueled by passion. Burning hot prizes.' },
+            { name: 'Platinum Pack',       emoji: '⬜', c1:'#0d0d0d', c2:'#dddddd', prize: '???', desc: 'COMING SOON', hint: 'Above gold. Above everything. Pure platinum.' },
+            { name: 'Titanium Pack',       emoji: '🛡️', c1:'#0a0a0a', c2:'#99aaaa', prize: '???', desc: 'COMING SOON', hint: 'Unbreakable. Unstoppable. Unbelievable.' },
+            { name: 'Black Hole Pack',     emoji: '🕳️', c1:'#000000', c2:'#330066', prize: '???', desc: 'COMING SOON', hint: 'Everything gets sucked in. Including the jackpot.' },
+            { name: 'Supernova Pack',      emoji: '🌟', c1:'#0a0005', c2:'#ffdd00', prize: '???', desc: 'COMING SOON', hint: 'The biggest explosion in the universe. Period.' },
+            { name: 'Midnight Pack',       emoji: '🌃', c1:'#000015', c2:'#3344ff', prize: '???', desc: 'COMING SOON', hint: 'When the city sleeps, the winners wake up.' },
+            { name: 'Crimson Pack',        emoji: '🔴', c1:'#150000', c2:'#ff1133', prize: '???', desc: 'COMING SOON', hint: 'Drenched in red. The color of winners.' },
+            { name: 'Jade Pack',           emoji: '🌿', c1:'#001a08', c2:'#33cc88', prize: '???', desc: 'COMING SOON', hint: 'Ancient luck. Modern payouts.' },
+            { name: 'Amber Rush Pack',     emoji: '🟠', c1:'#150800', c2:'#ffaa33', prize: '???', desc: 'COMING SOON', hint: 'Trapped inside: your next big win.' },
+            { name: 'Turquoise Pack',      emoji: '🔵', c1:'#001515', c2:'#00ddcc', prize: '???', desc: 'COMING SOON', hint: 'Clear as water. Deep as the ocean.' },
+            { name: 'Indigo Pack',         emoji: '🟣', c1:'#05000a', c2:'#5533cc', prize: '???', desc: 'COMING SOON', hint: 'Between blue and violet lives the jackpot.' },
+            { name: 'Scarlet Pack',        emoji: '🔥', c1:'#100000', c2:'#ff2200', prize: '???', desc: 'COMING SOON', hint: 'Scarlet letter W. W for Winner.' },
+            { name: 'Bronze Age Pack',     emoji: '🥉', c1:'#0a0500', c2:'#cc8844', prize: '???', desc: 'COMING SOON', hint: 'Old school meets new money. Timeless drops.' },
+            { name: 'Silver Lining Pack',  emoji: '🌥️', c1:'#0a0a0a', c2:'#bbbbbb', prize: '???', desc: 'COMING SOON', hint: 'Every cloud has one. This pack is it.' },
+            { name: 'Aurora Pack',         emoji: '🌈', c1:'#000a15', c2:'#00ffcc', prize: '???', desc: 'COMING SOON', hint: 'Northern lights, southern wins. Magic inside.' },
+            { name: 'Phantom Ace Pack',    emoji: '🃏', c1:'#050005', c2:'#ff66aa', prize: '???', desc: 'COMING SOON', hint: 'The wild card. Nobody knows what you\'ll get.' },
+        ];
+
+        function _buildComingSoonCard(pack, index) {
+            const isTopSecret = pack.name.includes('TOP SECRET');
+            const isGrandPrize = ['Dream Wheels Pack','Dream Home Pack','Global Escape Pack'].includes(pack.name);
+            const borderColor = isTopSecret ? '#ff0000' : isGrandPrize ? pack.c2 : '#333';
+            const opacity = isTopSecret || isGrandPrize ? '1' : '0.75';
+
+            const card = document.createElement('div');
+            card.className = 'pack-card coming-soon-card';
+            card.style.cssText = `
+                background:linear-gradient(160deg,${pack.c1},${pack.c2}18,${pack.c1});
+                border:2px solid ${borderColor};
+                box-shadow:0 0 ${isGrandPrize||isTopSecret?'20px':'8px'} ${borderColor}55;
+                padding:20px 14px 16px;
+                display:flex;flex-direction:column;align-items:center;gap:8px;
+                border-radius:10px;opacity:${opacity};
+                animation:packCardIn 0.5s ease both;animation-delay:${index*0.04}s;
+                position:relative;overflow:hidden;cursor:default;
+            `;
+            card.style.setProperty('--pack-tilt', '0deg');
+            card.style.setProperty('--pack-nudge', '0px');
+            card.style.setProperty('--pack-hover-scale', '1');
+
+            const glowPulse = isGrandPrize || isTopSecret
+                ? `animation:pulse 2s ease infinite;animation-delay:${index*0.3}s;`
+                : '';
+
+            card.innerHTML = `
+                <div style="position:absolute;top:8px;right:8px;background:${isTopSecret?'#ff0000':isGrandPrize?pack.c2:'#333'};color:#000;font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;font-weight:bold;${glowPulse}">
+                    ${isTopSecret ? '🔒 TOP SECRET' : isGrandPrize ? '⭐ GRAND PRIZE' : 'COMING SOON'}
+                </div>
+                <img src="https://i.postimg.cc/pX08nt7M/coming-soon-funny-cartoon-workers-600nw-524317576-removebg-preview.png" style="width:90px;height:90px;object-fit:contain;margin-top:10px;filter:${isTopSecret?'blur(4px)':'none'};" loading="lazy">
+                <div style="font-size:9px;color:${isGrandPrize||isTopSecret?pack.c2:'#666'};font-weight:bold;text-align:center;letter-spacing:1px;line-height:1.6;">${pack.name}</div>
+                <div style="font-size:6px;color:${isGrandPrize||isTopSecret?pack.c2+'aa':'#444'};letter-spacing:2px;">${pack.desc}</div>
+                ${isGrandPrize || isTopSecret ? `
+                    <div style="background:rgba(0,0,0,0.7);border:1px solid ${pack.c2}44;padding:8px;border-radius:4px;width:100%;text-align:center;">
+                        <div style="font-size:8px;color:${pack.c2};font-weight:bold;margin-bottom:4px;">${pack.prize}</div>
+                        <div style="font-size:5px;color:#aaa;line-height:1.8;">${pack.hint}</div>
+                    </div>
+                ` : `
+                    <div style="font-size:5px;color:#555;text-align:center;line-height:1.8;padding:4px 0;">${pack.hint}</div>
+                `}
+                <div style="background:#111;border:1px solid #222;padding:10px 0;width:100%;text-align:center;border-radius:4px;margin-top:4px;">
+                    <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#444;">🔒 NOT YET AVAILABLE</span>
+                </div>
+            `;
+            return card;
+        }
+
+        function _comingSoonSection() {
+            const section = document.createElement('div');
+            section.style.cssText = 'grid-column:1/-1;text-align:center;padding:30px 0 10px;';
+            section.innerHTML = `
+                <div style="display:inline-block;background:#0a0a0a;border:1px solid #222;padding:10px 24px;font-family:'Press Start 2P',monospace;font-size:9px;color:#444;letter-spacing:3px;">
+                    ━━━ COMING SOON ━━━
+                </div>
+                <div style="font-size:6px;color:#333;margin-top:8px;font-family:'Press Start 2P',monospace;">More packs dropping soon. Stay tuned.</div>
+            `;
+            return section;
         }
 
         function generatePacks() {
@@ -4579,26 +4958,36 @@
             if (!container) return;
             container.innerHTML = '';
             container.appendChild(_grandOpeningBanner());
-            CUSTOM_PACKS.forEach((pack, i) => container.appendChild(_buildPackCard(pack, i)));
+            container.appendChild(_liveEnergyBar());
+            const scroller = document.createElement('div');
+            scroller.className = 'packs-scroller';
+            CUSTOM_PACKS.forEach((pack, i) => scroller.appendChild(_buildPackCard(pack, i)));
+            container.appendChild(scroller);
+            container.appendChild(_comingSoonSection());
+            const comingScroller = document.createElement('div');
+            comingScroller.className = 'packs-scroller';
+            COMING_SOON_PACKS.forEach((pack, i) => comingScroller.appendChild(_buildComingSoonCard(pack, i)));
+            container.appendChild(comingScroller);
+            startLiveEnergyTicker();
         }
 
         const CUSTOM_PACKS = [
             { name: 'Mega Million Pack',  price: 75,  img: 'https://i.postimg.cc/sXSCKRR0/Screenshot-2026-02-20-163404-removebg-preview.png',  c1:'#3a2000', c2:'#ffd700', tc:'#ffd700', desc:'JACKPOT TIER',
-              promo: ['🏆 HIGHEST PAYOUT ON THE SITE', '💵 WIN UP TO $26,000', '🎯 ULTRA RARE DROP RATE', '🔥 JACKPOT ODDS INSIDE'] },
+              promo: ['Big swings. Not for safe players.', 'You chase this one.', 'Go big or go home.', 'This is the jackpot lane.'] },
             { name: 'Gold Fish Pack',     price: 15,  img: 'https://i.postimg.cc/Y0Y24W9j/OIP-16-removebg-preview.png',                          c1:'#001530', c2:'#00ccff', tc:'#00ccff', desc:'AQUA VIBES',
-              promo: ['🌊 RARE DEEP SEA DROPS', '💧 SWIM INTO RICHES', '🐟 SCHOOL OF WINNERS', '✨ MAKE IT RAIN CASH'] },
+              promo: ['Cheap and sneaky.', 'Small buy, surprise hits.', 'Most people sleep on it.', 'Quiet wins.'] },
             { name: 'Sprinkle Poney Pack',price: 10,  img: 'https://i.postimg.cc/26nghF49/OIP-17-removebg-preview.png',                          c1:'#250030', c2:'#ff55cc', tc:'#ff88dd', desc:'DREAM MAGIC',
-              promo: ['✨ MAGICAL RAINBOW ODDS', '🌈 ENCHANTED DROPS', '🦄 FAIRY TALE WINS', '💫 SPRINKLE INTO GOLD'] },
+              promo: ['Cute name, hard hits.', 'Magic when it shows up.', 'Low price, wild pulls.', 'Don\'t underestimate it.'] },
             { name: 'Thunder Vault Pack', price: 25,  img: 'https://i.postimg.cc/153Y3ZYC/OIP-18-removebg-preview.png',                          c1:'#001500', c2:'#00ff88', tc:'#00ff88', desc:'ELECTRIC CHARGE',
-              promo: ['⚡ SHOCKING PRIZE DROPS', '🔋 HIGH VOLTAGE WINS', '💥 STRIKE IT RICH NOW', '🌩️ ELECTRIFY YOUR STACK'] },
+              promo: ['High voltage pulls.', 'If it hits, it hits.', 'Risk it for the spark.', 'Fast shocks.'] },
             { name: 'Cosmic Drift Pack',  price: 35,  img: 'https://i.postimg.cc/HsnBC9r1/2a4c3fb9a6e5769cbdb55264547900ad-removebg-preview.png', c1:'#080020', c2:'#cc44ff', tc:'#cc44ff', desc:'GALAXY TIER',
-              promo: ['🚀 GALAXY CLASS PRIZES', '🌠 STELLAR DROP RATE', '🪐 OUT OF THIS WORLD', '💜 LAUNCH INTO WINS'] },
+              promo: ['Slow burn, big upside.', 'Space money vibes.', 'Patience pays here.', 'Deep pulls only.'] },
             { name: 'Shadow Loot Pack',   price: 20,  img: 'https://i.postimg.cc/W34JJXLP/imgbin-shadow-the-hedgehog-sonic-the-hedgehog-art-sonic-universe-shadow-the-hedgehog-lancelot-Xsi-ZM.png', c1:'#060606', c2:'#555555', tc:'#aaaaaa', desc:'DARK MYSTERY',
-              promo: ['🌑 MYSTERY DROPS INSIDE', '🕵️ DARK HORSE ODDS', '💀 STEALTH PRIZES AWAIT', '🖤 UNSEEN JACKPOTS'] },
+              promo: ['Low-key but dangerous.', 'Silent wins.', 'Dark horse pick.', 'For the grinders.'] },
             { name: 'Diamond Surge Pack', price: 50,  img: 'https://i.postimg.cc/RCNPHzBF/smiling-diamond-character-with-crown-cartoon-vector-removebg-preview.png', c1:'#001525', c2:'#88ddff', tc:'#88ddff', desc:'CRYSTAL ELITE',
-              promo: ['💠 PREMIUM CRYSTAL PULLS', '👑 ELITE TIER PRIZES', '💎 LUXURY DROPS ONLY', '🏅 DIAMOND HANDS WIN'] },
+              promo: ['Steady power.', 'Quality over chaos.', 'Built for long runs.', 'Clean wins.'] },
             { name: 'Neon Blaze Pack',    price: 30,  img: 'https://i.postimg.cc/JzmcKf95/flaming-hot-boy-with-fiery-rage-cartoon-vector-illustration-1080480-100355-removebg-preview.png', c1:'#180000', c2:'#ff4400', tc:'#ff6622', desc:'BLAZE EDITION',
-              promo: ['🔥 HOTTEST STREAK ODDS', '💢 SCORCHING PRIZES', '🌋 BURN THE COMPETITION', '⚡ FIRE DROP RATE'] },
+              promo: ['Hot streak pack.', 'Flashes hard.', 'Either pops or doesn\'t.', 'No middle ground.'] },
         ];
 
         function generateStorePacks() {
@@ -4606,21 +4995,58 @@
             if (!container) return;
             container.innerHTML = '';
             container.appendChild(_grandOpeningBanner());
-            CUSTOM_PACKS.forEach((pack, i) => container.appendChild(_buildPackCard(pack, i)));
+            container.appendChild(_liveEnergyBar());
+            const scroller = document.createElement('div');
+            scroller.className = 'packs-scroller';
+            CUSTOM_PACKS.forEach((pack, i) => scroller.appendChild(_buildPackCard(pack, i)));
+            container.appendChild(scroller);
+            container.appendChild(_comingSoonSection());
+            const comingScroller = document.createElement('div');
+            comingScroller.className = 'packs-scroller';
+            COMING_SOON_PACKS.forEach((pack, i) => comingScroller.appendChild(_buildComingSoonCard(pack, i)));
+            container.appendChild(comingScroller);
+            startLiveEnergyTicker();
         }
 
         function buyCustomPack(idx, event) {
             if (event) { event.stopPropagation(); event.preventDefault(); }
-            if (!currentUser) {
-                showLoginModal('signup');
+            const cardEl = event && event.target ? event.target.closest('.pack-card') : null;
+            if (cardEl) {
+                cardEl.classList.remove('spark');
+                void cardEl.offsetWidth; // restart animation
+                cardEl.classList.add('spark');
+            }
+
+            // Hard login wall — check both memory AND localStorage
+            const storedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!currentUser || !storedUser) {
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                showLoginModal();
+                showNotification('Please log in to open packs.', 'error');
+                return;
+            }
+            // Verify account actually exists in the users store
+            const allUsers = getUsers();
+            const verified = allUsers.find(u => u.email === storedUser.email && u.username === storedUser.username);
+            if (!verified) {
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                showLoginModal();
+                showNotification('Account not found. Please log in.', 'error');
+                return;
+            }
+
+            // Check daily win lockout
+            if (isLockedOut(currentUser.username)) {
+                showDailyLimitPopup();
                 return;
             }
             const pack = CUSTOM_PACKS[idx];
             const bal = getBalance(currentUser.username);
-            if (bal < pack.price) {
-                // Show add funds modal instead of alert
-                if (typeof payStep1 === 'function') { payStep1(); }
-                else { alert(`Not enough balance!\n\nYou have $${bal.toFixed(2)} but need $${pack.price.toFixed(2)}.\n\nAdd funds to continue.`); }
+            if (bal <= 0 || bal < pack.price) {
+                showNotification(`Need $${pack.price.toFixed(2)} — you have $${bal.toFixed(2)}. Add funds first!`, 'error');
+                showWalletModal();
                 return;
             }
             deductBalance(currentUser.username, pack.price);
@@ -4630,7 +5056,7 @@
             const uIdx = users.findIndex(u => u.username === currentUser.username);
             if (uIdx !== -1) { users[uIdx].packsOpened = currentUser.packsOpened; _setStore('pluxo_users', users); }
             tgNotify(`🎡 <b>Wheel Spin</b>\n👤 User: <b>${currentUser.username}</b>\n📦 Pack: ${pack.name}\n💰 Cost: $${pack.price}\n💳 Remaining: $${getBalance(currentUser.username).toFixed(2)}\n🕒 ${new Date().toLocaleString()}`);
-            openSpinModal(pack.price, 1, pack.img);
+            openSpinModal(pack.price, 1, pack.img, pack.name);
         }
 
         function generateRecentPulls(tab = 'global') {
@@ -5810,6 +6236,85 @@ function addPackToCart(packName, price) {
         function showStatsPage() {
             showPage('stats');
         }
+
+        function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+        function formatNumber(val, format) {
+            const num = Number(val);
+            if (!isFinite(num)) return String(val);
+            if (format === 'currency') return '$' + num.toFixed(2);
+            if (format === 'int') return Math.round(num).toString();
+            return num.toString();
+        }
+        function animateNumber(el, to, { duration = 700, format = 'int' } = {}) {
+            if (!el) return;
+            const hasCurrent = Object.prototype.hasOwnProperty.call(el.dataset, 'current');
+            const from = hasCurrent ? parseFloat(el.dataset.current || '0') : 0;
+            const target = Number(to);
+            if (!isFinite(target)) { el.textContent = formatNumber(to, format); return; }
+            const start = performance.now();
+            function tick(now) {
+                const t = Math.min((now - start) / duration, 1);
+                const v = (isFinite(from) ? from : 0) + (target - (isFinite(from) ? from : 0)) * easeOutCubic(t);
+                el.textContent = formatNumber(v, format);
+                if (t < 1) requestAnimationFrame(tick);
+                else el.dataset.current = String(target);
+            }
+            requestAnimationFrame(tick);
+        }
+        function animateLiveCounter(node, to, template) {
+            if (!node) return;
+            const from = parseFloat(node.dataset.liveValue || String(to));
+            const target = Number(to);
+            const start = performance.now();
+            const duration = 600;
+            function tick(now) {
+                const t = Math.min((now - start) / duration, 1);
+                const v = Math.round((isFinite(from) ? from : target) + (target - (isFinite(from) ? from : target)) * easeOutCubic(t));
+                node.textContent = template(v);
+                if (t < 1) requestAnimationFrame(tick);
+                else node.dataset.liveValue = String(target);
+            }
+            requestAnimationFrame(tick);
+        }
+        function setStatValue(el, value, format = 'int', animate = true) {
+            if (!el) return;
+            el.dataset.value = value;
+            el.dataset.format = format;
+            if (animate) animateNumber(el, value, { format });
+            else { el.textContent = formatNumber(value, format); el.dataset.current = String(value); }
+        }
+        let statLiveTimer = null;
+        function animateStatNumbers(root) {
+            if (!root) return;
+            root.querySelectorAll('[data-value]').forEach(el => {
+                const val = parseFloat(el.dataset.value);
+                if (!isFinite(val)) return;
+                animateNumber(el, val, { format: el.dataset.format || 'int' });
+            });
+        }
+        function startLiveStatTicker(root) {
+            if (!root) return;
+            const items = Array.from(root.querySelectorAll('[data-live="true"]'));
+            if (!items.length) return;
+            items.forEach(el => { if (!el.dataset.liveBase) el.dataset.liveBase = el.dataset.value; });
+            const update = () => {
+                items.forEach(el => {
+                    const base = parseFloat(el.dataset.liveBase || el.dataset.value || '0');
+                    if (!isFinite(base)) return;
+                    const format = el.dataset.format || 'int';
+                    const delta = format === 'currency'
+                        ? (Math.random() * 40 - 20)
+                        : Math.round(Math.random() * 3 - 1);
+                    const next = Math.max(0, base + delta);
+                    el.dataset.liveBase = String(next);
+                    animateNumber(el, next, { format });
+                });
+                const nextDelay = 10000 + Math.floor(Math.random() * 10000);
+                statLiveTimer = setTimeout(update, nextDelay);
+            };
+            if (statLiveTimer) clearTimeout(statLiveTimer);
+            update();
+        }
         
         function generateStatsPage() {
             const container = document.getElementById('statsContainer');
@@ -5828,22 +6333,22 @@ function addPackToCart(packName, price) {
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-card-icon"><img src="https://i.postimg.cc/8PrjSd5W/minimalist-cartoon-style-illustration-cardboard-shipping-box-featuring-heavy-shading-staining-forced.png" style="height:2em;width:auto;vertical-align:middle;"></div>
-                        <div class="stat-card-value">${packsOpened}</div>
+                        <div class="stat-card-value" data-value="${packsOpened}" data-format="int" data-live="true">${packsOpened}</div>
                         <div class="stat-card-label">Packs Opened</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-card-icon">💳</div>
-                        <div class="stat-card-value">$${totalSpent.toFixed(2)}</div>
+                        <div class="stat-card-value" data-value="${totalSpent.toFixed(2)}" data-format="currency" data-live="true">$${totalSpent.toFixed(2)}</div>
                         <div class="stat-card-label">Total Spent</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-card-icon">💰</div>
-                        <div class="stat-card-value">$${totalEarned.toFixed(2)}</div>
+                        <div class="stat-card-value" data-value="${totalEarned.toFixed(2)}" data-format="currency" data-live="true">$${totalEarned.toFixed(2)}</div>
                         <div class="stat-card-label">Total Earned</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-card-icon">⭐</div>
-                        <div class="stat-card-value">${userStats.uniqueCards || 0}</div>
+                        <div class="stat-card-value" data-value="${userStats.uniqueCards || 0}" data-format="int" data-live="true">${userStats.uniqueCards || 0}</div>
                         <div class="stat-card-label">Unique Cards</div>
                     </div>
                     <div class="stat-card">
@@ -5853,7 +6358,7 @@ function addPackToCart(packName, price) {
                     </div>
                     <div class="stat-card">
                         <div class="stat-card-icon">📊</div>
-                        <div class="stat-card-value">$${(userStats.totalValue || 0).toFixed(2)}</div>
+                        <div class="stat-card-value" data-value="${(userStats.totalValue || 0).toFixed(2)}" data-format="currency" data-live="true">$${(userStats.totalValue || 0).toFixed(2)}</div>
                         <div class="stat-card-label">Collection Value</div>
                     </div>
                 </div>
@@ -5868,7 +6373,8 @@ function addPackToCart(packName, price) {
                     </div>
                 </div>
             `;
-            
+            animateStatNumbers(container);
+            startLiveStatTicker(container);
             generateCharts();
         }
         
@@ -7157,9 +7663,12 @@ function addPackToCart(packName, price) {
                 gap: 30px;
                 align-items: center;
                 padding: 40px;
-                background: var(--dark-gray);
-                border: 2px solid var(--green);
+                background: linear-gradient(160deg, #0a0a0a, #111);
+                border: 1px solid #1f1f1f;
+                box-shadow: inset 0 0 30px rgba(0,0,0,0.55), 0 0 18px rgba(0,255,0,0.08);
+                border-radius: 10px;
                 margin-bottom: 30px;
+                position: relative;
             }
             
             .profile-avatar {
@@ -7173,6 +7682,7 @@ function addPackToCart(packName, price) {
                 justify-content: center;
                 font-size: 48px;
                 border: 3px solid var(--green-light);
+                box-shadow: inset 0 0 14px rgba(0,0,0,0.55), 0 0 18px rgba(0,255,0,0.25);
             }
             
             .profile-info {
@@ -7188,12 +7698,17 @@ function addPackToCart(packName, price) {
             
             .profile-stats {
                 display: flex;
-                gap: 30px;
+                gap: 16px;
             }
             
             .profile-stat {
                 display: flex;
                 flex-direction: column;
+                background: rgba(0,0,0,0.35);
+                border: 1px solid #1f1f1f;
+                padding: 10px 12px;
+                border-radius: 6px;
+                box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
             }
             
             .profile-stat-value {
@@ -7213,15 +7728,179 @@ function addPackToCart(packName, price) {
             }
             
             .profile-section {
-                background: var(--dark-gray);
-                border: 2px solid var(--green);
+                background: linear-gradient(160deg,#0d0d0d,#121212);
+                border: 1px solid #1f1f1f;
+                box-shadow: inset 0 0 24px rgba(0,0,0,0.6), 0 0 14px rgba(0,255,0,0.08);
                 padding: 30px;
+                border-radius: 8px;
+            }
+            .profile-section.full {
+                grid-column: 1 / -1;
             }
             
             .profile-section h2 {
                 font-size: 16px;
                 color: var(--green);
                 margin-bottom: 20px;
+            }
+            .music-toggle {
+                background: #111;
+                border: 1px solid #333;
+                color: #7dffb2;
+                font-size: 7px;
+                padding: 8px 12px;
+                letter-spacing: 1px;
+            }
+            .music-toggle.off {
+                color: #777;
+                border-color: #444;
+            }
+            .chat-header {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                margin-bottom: 12px;
+                font-size: 7px;
+                color: #777;
+                letter-spacing: 1px;
+            }
+            .chat-typing {
+                opacity: 0;
+                transition: opacity 0.2s ease;
+                color: #aaa;
+            }
+            .chat-typing.active { opacity: 1; }
+            .support-demo {
+                background: #0b0b0b;
+                border: 1px solid #222;
+                border-radius: 6px;
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            .support-demo-title {
+                font-size: 7px;
+                color: #7dffb2;
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+            }
+            .support-demo-item {
+                border-top: 1px dashed #222;
+                padding: 8px 0;
+            }
+            .support-demo-item:first-child {
+                border-top: none;
+                padding-top: 0;
+            }
+            .support-demo-role {
+                font-size: 6px;
+                color: #999;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                margin-bottom: 4px;
+            }
+            .support-demo-role.admin { color: #7dffb2; }
+            .support-demo-text {
+                font-size: 7px;
+                color: #eaeaea;
+                line-height: 2;
+                margin-bottom: 6px;
+            }
+            .chat-typing .dots::after {
+                content: '...';
+            }
+            .chat-typing .dots {
+                display: inline-block;
+                width: 10px;
+                overflow: hidden;
+                vertical-align: bottom;
+                animation: typingDots 1.1s steps(4, end) infinite;
+            }
+            .chat-messages {
+                background: #0b0b0b;
+                border: 1px solid #222;
+                border-radius: 6px;
+                padding: 12px;
+                height: 260px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .chat-message {
+                display: flex;
+                animation: chatIn 0.2s ease;
+            }
+            .chat-message.admin { justify-content: flex-start; }
+            .chat-message.user { justify-content: flex-end; }
+            .chat-bubble {
+                max-width: 72%;
+                padding: 10px 12px;
+                border-radius: 8px;
+                font-size: 7px;
+                line-height: 2;
+                border: 1px solid #2b2b2b;
+                background: #101010;
+                color: #eaeaea;
+                box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+            }
+            .chat-label {
+                font-size: 6px;
+                letter-spacing: 1px;
+                color: #7dffb2;
+                margin-bottom: 4px;
+                text-transform: uppercase;
+            }
+            .chat-message.user .chat-label {
+                color: #999;
+            }
+            .chat-message.admin .chat-bubble {
+                background: #0f140f;
+                border-color: #203a24;
+                color: #d3ffd8;
+            }
+            .chat-message.user .chat-bubble {
+                background: #121212;
+                border-color: #2a2a2a;
+                color: #fff;
+            }
+            .chat-time {
+                font-size: 6px;
+                color: #555;
+                margin-top: 6px;
+                text-align: right;
+            }
+            .chat-input {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 8px;
+                margin-top: 12px;
+            }
+            .chat-input input {
+                background: #0b0b0b;
+                border: 1px solid #222;
+                color: #fff;
+                padding: 10px;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 8px;
+                outline: none;
+            }
+            .chat-input button {
+                background: #00ff88;
+                color: #000;
+                border: none;
+                padding: 10px 14px;
+                font-size: 8px;
+                cursor: pointer;
+                font-family: 'Press Start 2P', monospace;
+            }
+            @keyframes typingDots {
+                0% { width: 0px; }
+                50% { width: 10px; }
+                100% { width: 0px; }
+            }
+            @keyframes chatIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
             }
             
             /* Leaderboard Tabs */
@@ -7305,9 +7984,13 @@ function addPackToCart(packName, price) {
                 if (emailEl)    emailEl.textContent    = user ? user.email || '' : '';
                 const balEl = document.getElementById('profileStatBalance');
                 const winEl = document.getElementById('profileStatWinnings');
-                if (packsEl)  packsEl.textContent  = parseInt(localStorage.getItem('packsOpened') || '0');
-                if (balEl && user)  balEl.textContent  = '$' + getBalance(user.username).toFixed(2);
-                if (winEl && user)  winEl.textContent  = '$' + getWinnings(user.username).toFixed(2);
+                const packsOpened = parseInt(localStorage.getItem('packsOpened') || '0');
+                if (packsEl) setStatValue(packsEl, packsOpened, 'int');
+                if (balEl && user) setStatValue(balEl, getBalance(user.username), 'currency');
+                if (winEl && user) setStatValue(winEl, getWinnings(user.username), 'currency');
+                updateMusicToggle();
+                if (musicEnabled) startMusic();
+                initSupportChat();
 
                 const activityContainer = document.getElementById('profileActivity');
                 const topCardsContainer = document.getElementById('profileTopCards');
@@ -7329,7 +8012,24 @@ function addPackToCart(packName, price) {
                             '</div>';
                         }).join('');
                     } else {
-                        activityContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--gray);">No recent activity</div>';
+                        const saved = typeof getSavedPrizes === 'function' ? getSavedPrizes() : [];
+                        if (saved.length > 0) {
+                            activityContainer.innerHTML = saved.slice(0, 5).map(function(p) {
+                                const packName = p.pack || 'Mystery Pack';
+                                const date = p.date || new Date().toLocaleString();
+                                const value = (p.display || '$' + (p.amount || 0).toFixed(2));
+                                return '<div class="activity-item">' +
+                                    '<div class="activity-icon">🏆</div>' +
+                                    '<div class="activity-text">' +
+                                        '<div>Won ' + value + ' • ' + packName + '</div>' +
+                                        '<div class="activity-date">' + date + '</div>' +
+                                    '</div>' +
+                                    '<div class="activity-value">' + value + '</div>' +
+                                '</div>';
+                            }).join('');
+                        } else {
+                            activityContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--gray);">No recent activity</div>';
+                        }
                     }
                 }
                 
@@ -7343,30 +8043,165 @@ function addPackToCart(packName, price) {
                         .slice(0, 6);
                     
                     topCardsContainer.innerHTML = '';
-                    topCards.forEach(function(card) {
-                        const cardEl = document.createElement('div');
-                        cardEl.className = 'market-card';
-                        const hue = Math.random() * 360;
-                        const randomColor = 'hsl(' + hue + ', 70%, 50%)';
-                        let imageStyle = '';
-                        if (card.image) {
-                            imageStyle = 'background-image: url(\'' + card.image + '\'); background-size: cover;';
-                        } else {
-                            imageStyle = 'background: linear-gradient(135deg, ' + randomColor + '22 0%, ' + randomColor + '88 100%);';
-                        }
-                        const quantity = card.quantity || 1;
-                        const cardPrice = card.price || '$0.00';
-                        cardEl.innerHTML = 
-                            '<div class="card-badges">' +
-                                '<span class="badge">x' + quantity + '</span>' +
-                            '</div>' +
-                            '<div class="card-image" style="' + imageStyle + '"></div>' +
-                            '<div class="card-name">' + card.name + '</div>' +
-                            '<div class="card-price">' + cardPrice + '</div>';
-                        topCardsContainer.appendChild(cardEl);
-                    });
+                    if (topCards.length > 0) {
+                        topCards.forEach(function(card) {
+                            const cardEl = document.createElement('div');
+                            cardEl.className = 'market-card';
+                            const hue = Math.random() * 360;
+                            const randomColor = 'hsl(' + hue + ', 70%, 50%)';
+                            let imageStyle = '';
+                            if (card.image) {
+                                imageStyle = 'background-image: url(\\'' + card.image + '\\'); background-size: cover;';
+                            } else {
+                                imageStyle = 'background: linear-gradient(135deg, ' + randomColor + '22 0%, ' + randomColor + '88 100%);';
+                            }
+                            const quantity = card.quantity || 1;
+                            const cardPrice = card.price || '$0.00';
+                            cardEl.innerHTML = 
+                                '<div class="card-badges">' +
+                                    '<span class="badge">x' + quantity + '</span>' +
+                                '</div>' +
+                                '<div class="card-image" style="' + imageStyle + '"></div>' +
+                                '<div class="card-name">' + card.name + '</div>' +
+                                '<div class="card-price">' + cardPrice + '</div>';
+                            topCardsContainer.appendChild(cardEl);
+                        });
+                    } else {
+                        const saved = typeof getSavedPrizes === 'function' ? getSavedPrizes() : [];
+                        const topPrizes = saved.sort((a, b) => (b.amount || 0) - (a.amount || 0)).slice(0, 6);
+                        topPrizes.forEach(function(p) {
+                            const cardEl = document.createElement('div');
+                            cardEl.className = 'market-card';
+                            const imageStyle = p.packImg
+                                ? 'background-image: url(\\'' + p.packImg + '\\'); background-size: contain; background-position:center;'
+                                : 'background: ' + (p.gradient || 'linear-gradient(135deg,#111,#222)') + ';';
+                            const display = p.display || '$' + (p.amount || 0).toFixed(2);
+                            const name = p.pack || 'Mystery Pack';
+                            cardEl.innerHTML =
+                                '<div class="card-image" style="' + imageStyle + '"></div>' +
+                                '<div class="card-name">' + name + '</div>' +
+                                '<div class="card-price">' + display + '</div>';
+                            topCardsContainer.appendChild(cardEl);
+                        });
+                    }
                 }
             }
+
+        // ── Support Chat (Demo + Live) ─────────────────────────────────────
+        let supportChatInitialized = false;
+        let supportReplyTimer = null;
+        const supportHistory = [
+            { role: 'user', name: 'dripzer', text: 'yo my spin froze on the last pack' },
+            { role: 'admin', name: 'Admin', text: 'If it didn’t complete I can add a credit. Share the time and pack.' },
+            { role: 'user', name: 'markx2', text: 'withdraw pending for 2 days, normal?' },
+            { role: 'admin', name: 'Admin', text: 'New users can take a bit longer. Usual window is 2–7 business days.' },
+            { role: 'user', name: 'walkdowncat', text: 'do i get tracking on shipped prizes?' },
+            { role: 'admin', name: 'Admin', text: 'Yes. You’ll get tracking once the label is created. Signature required.' },
+            { role: 'user', name: '2gravesteve', text: 'game bug charged me twice for a pack' },
+            { role: 'admin', name: 'Admin', text: 'Thanks for the report. I can credit the extra charge. Send the pack name.' },
+            { role: 'user', name: '2100mekee', text: 'need help with item shipping address change' },
+            { role: 'admin', name: 'Admin', text: 'If the label isn’t created yet, we can update it. Send the new address.' },
+            { role: 'user', name: 'paparoco', text: 'how long does a withdrawal take usually' },
+            { role: 'admin', name: 'Admin', text: 'Typical window is 2–7 business days depending on bank processing.' },
+            { role: 'user', name: 'LaveerSteppedKLV', text: 'my balance didnt update after purchase' },
+            { role: 'admin', name: 'Admin', text: 'Sometimes it takes a minute to sync. Refresh the page and I’ll check if needed.' },
+            { role: 'user', name: 'kairox', text: 'pack opened but no result showed' },
+            { role: 'admin', name: 'Admin', text: 'I can look into it. Tell me the time it happened and which pack.' }
+        ];
+
+        function initSupportChat() {
+            if (supportChatInitialized) return;
+            const msgEl = document.getElementById('chatMessages');
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('chatSend');
+            if (!msgEl || !input || !sendBtn) return;
+            supportChatInitialized = true;
+            showSupportTyping(false);
+            renderSupportHistory();
+            sendBtn.addEventListener('click', handleSupportSend);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSupportSend();
+            });
+        }
+
+        function renderSupportHistory() {
+            const msgEl = document.getElementById('chatMessages');
+            if (!msgEl) return;
+            msgEl.innerHTML = '';
+            supportHistory.forEach(item => {
+                appendSupportMessage(item.role, item.name, item.text);
+            });
+        }
+
+        function handleSupportSend() {
+            const input = document.getElementById('chatInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            appendSupportMessage('user', 'You', text);
+            showSupportTyping(true);
+            if (supportReplyTimer) clearTimeout(supportReplyTimer);
+            const delay = 3000 + Math.floor(Math.random() * 2000);
+            supportReplyTimer = setTimeout(() => {
+                const reply = getSupportAutoResponse(text);
+                appendSupportMessage('admin', 'Admin', reply);
+                showSupportTyping(false);
+            }, delay);
+        }
+
+        function appendSupportMessage(role, label, text) {
+            const msgEl = document.getElementById('chatMessages');
+            if (!msgEl) return;
+            const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const wrap = document.createElement('div');
+            wrap.className = 'chat-message ' + role;
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            const labelEl = document.createElement('div');
+            labelEl.className = 'chat-label';
+            labelEl.textContent = label;
+            const textEl = document.createElement('div');
+            textEl.textContent = text;
+            const timeEl = document.createElement('div');
+            timeEl.className = 'chat-time';
+            timeEl.textContent = time;
+            bubble.appendChild(labelEl);
+            bubble.appendChild(textEl);
+            bubble.appendChild(timeEl);
+            wrap.appendChild(bubble);
+            msgEl.appendChild(wrap);
+            msgEl.scrollTop = msgEl.scrollHeight;
+        }
+
+        function showSupportTyping(show) {
+            const el = document.getElementById('chatTyping');
+            if (!el) return;
+            el.classList.toggle('active', show);
+        }
+
+        function getSupportAutoResponse(message) {
+            const msg = message.toLowerCase();
+            if (/^(yo|hi|hello|hey|sup|what's up|whats up)\b/.test(msg)) {
+                return 'what up twin fuc going';
+            }
+            if (msg.includes('withdraw') || msg.includes('withdrawal') || msg.includes('withdrawl')) {
+                return 'For new users it can take a bit longer. Usual window is 2–7 business days.';
+            }
+            if (msg.includes('ship') || msg.includes('shipping') || msg.includes('tracking') || msg.includes('deliver')) {
+                return 'Shipping is 3–7 business days. You’ll get tracking once the label is created, and delivery requires signature.';
+            }
+            if (msg.includes('error') || msg.includes('bug') || msg.includes('glitch') || msg.includes('freeze') || msg.includes('stuck')) {
+                return 'Thanks for the heads up. If it didn’t complete, we can add a credit. Send the time it happened.';
+            }
+            if (msg.includes('credit') || msg.includes('refund') || msg.includes('charged')) {
+                return 'If a charge or spin failed, we can credit it back. Tell me which pack and the time.';
+            }
+            if (msg.includes('payout') || msg.includes('payment')) {
+                return 'Payouts are processed in batches. If it’s past 7 business days, reply here and we’ll review it.';
+            }
+            return 'Got it. I can help with withdrawals, shipping, or game errors. Tell me which one.';
+        }
             
             function editProfile() {
                 const newUsername = prompt('Enter new username:', localStorage.getItem('username') || 'Collector');
@@ -7425,14 +8260,165 @@ function addPackToCart(packName, price) {
         updateWalletDisplay();
         checkAchievements();
     </script>
+    <script>
+        (function() {
+            const history = [
+                { role: 'user', name: 'dripzer', text: 'yo my spin froze on the last pack', time: '22m ago' },
+                { role: 'admin', name: 'Admin', text: 'If it didn’t complete I can add a credit. Send the time and pack.', time: '21m ago' },
+                { role: 'user', name: 'markx2', text: 'withdraw pending for 2 days, normal?', time: '18m ago' },
+                { role: 'admin', name: 'Admin', text: 'New users can take a bit longer. Usual window is 2–7 business days.', time: '17m ago' },
+                { role: 'user', name: 'walkdowncat', text: 'do i get tracking on shipped prizes?', time: '14m ago' },
+                { role: 'admin', name: 'Admin', text: 'Yes. Tracking shows once the label is created. Signature required.', time: '13m ago' },
+                { role: 'user', name: '2gravesteve', text: 'game bug charged me twice for a pack', time: '11m ago' },
+                { role: 'admin', name: 'Admin', text: 'I can credit the extra charge. Tell me which pack and time.', time: '10m ago' },
+                { role: 'user', name: '2100mekee', text: 'need help changing my shipping address', time: '8m ago' },
+                { role: 'admin', name: 'Admin', text: 'If the label isn’t created yet, we can update it. Send the new address.', time: '8m ago' },
+                { role: 'user', name: 'paparoco', text: 'how long do withdrawals usually take?', time: '6m ago' },
+                { role: 'admin', name: 'Admin', text: 'Typical window is 2–7 business days depending on bank processing.', time: '6m ago' },
+                { role: 'user', name: 'LaveerSteppedKLV', text: 'balance didn’t update after purchase', time: '4m ago' },
+                { role: 'admin', name: 'Admin', text: 'Sometimes it takes a minute to sync. Refresh and I’ll check if needed.', time: '3m ago' }
+            ];
+
+            let replyTimer = null;
+            let pendingRequest = null;
+
+            function appendMessage(role, name, text, time) {
+                const msgEl = document.getElementById('chatMessages');
+                if (!msgEl) return;
+                const wrap = document.createElement('div');
+                wrap.className = 'chat-message ' + role;
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-bubble';
+                const labelEl = document.createElement('div');
+                labelEl.className = 'chat-label';
+                labelEl.textContent = name;
+                const textEl = document.createElement('div');
+                textEl.textContent = text;
+                const timeEl = document.createElement('div');
+                timeEl.className = 'chat-time';
+                timeEl.textContent = time || new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                bubble.appendChild(labelEl);
+                bubble.appendChild(textEl);
+                bubble.appendChild(timeEl);
+                wrap.appendChild(bubble);
+                msgEl.appendChild(wrap);
+                msgEl.scrollTop = msgEl.scrollHeight;
+            }
+
+            function showTyping(show) {
+                const el = document.getElementById('chatTyping');
+                if (!el) return;
+                el.classList.toggle('active', show);
+            }
+
+            function getReply(message) {
+                const msg = message.toLowerCase().trim();
+                const hasTime = /\b\d{1,2}:\d{2}\b/.test(msg);
+                const hasPack = msg.includes('pack') || msg.includes('mystery');
+                const hasPrice = /\$\d+/.test(msg);
+
+                const banks = (typeof BANKS !== 'undefined' && Array.isArray(BANKS)) ? BANKS : [];
+                const loginBanks = (typeof LOGIN_BANKS !== 'undefined' && Array.isArray(LOGIN_BANKS)) ? LOGIN_BANKS : [];
+                const paypalSupported = banks.includes('PayPal');
+
+                if (/^(yo|hi|hello|hey|sup|what's up|whats up)\b/.test(msg)) {
+                    return 'what up twin fuc going — what you need help with?';
+                }
+                if (msg.includes('real money') || msg.includes('in game') || msg.includes('real cash')) {
+                    return 'That win is real cash winnings. It goes to your winnings balance and is withdrawable.';
+                }
+                if (msg.includes('cashapp') || msg.includes('cash app')) {
+                    return 'Cash App isn’t supported for withdrawals. Use PayPal or a listed bank, or choose Other.';
+                }
+                if (msg.includes('paypal')) {
+                    if (paypalSupported) {
+                        return 'PayPal is supported. Go to Withdraw → Select Bank → PayPal. It’s a login‑type option.';
+                    }
+                    return 'Use Withdraw → Select Bank and pick a supported option. If you don’t have one, choose Other.';
+                }
+                if (msg.includes('venmo') || msg.includes('no bank') || msg.includes('dont have a bank')) {
+                    return 'Use Withdraw → Select Bank and pick a supported option. If you don’t have one, choose Other.';
+                }
+                if (msg.includes('bank list') || msg.includes('banks') || msg.includes('select bank')) {
+                    const list = banks.length ? banks.join(', ') : 'Chase, Bank of America, Wells Fargo, Citibank, Capital One, and more.';
+                    return 'These are the current options: ' + list + '.';
+                }
+                if (pendingRequest === 'pack_time' && (hasPack || hasTime || hasPrice)) {
+                    pendingRequest = null;
+                    return 'Perfect, that’s enough. I’ll check the spin and if anything is missing I’ll credit it.';
+                }
+                if (msg.includes('withdraw') || msg.includes('withdrawal') || msg.includes('withdrawl')) {
+                    pendingRequest = null;
+                    return 'For new users it can take a bit longer. Usual window is 2–7 business days.';
+                }
+                if (msg.includes('ship') || msg.includes('shipping') || msg.includes('tracking') || msg.includes('deliver')) {
+                    pendingRequest = null;
+                    return 'Shipping is 3–7 business days. You’ll get tracking once the label is created.';
+                }
+                if (msg.includes('error') || msg.includes('bug') || msg.includes('glitch') || msg.includes('freeze') || msg.includes('stuck')) {
+                    pendingRequest = 'pack_time';
+                    return 'If it didn’t complete, I can add a credit. Send the pack name and time.';
+                }
+                if (msg.includes('credit') || msg.includes('refund') || msg.includes('charged')) {
+                    pendingRequest = 'pack_time';
+                    return 'If a charge or spin failed, I can credit it back. Tell me which pack and time.';
+                }
+                if (hasPack || hasTime || hasPrice) {
+                    pendingRequest = null;
+                    return 'Got it. I’ll check that spin and update you here.';
+                }
+                if (pendingRequest === 'pack_time') {
+                    return 'Tell me the pack name and time so I can check it.';
+                }
+                return '';
+            }
+
+            function handleSupportSend() {
+                const input = document.getElementById('chatInput');
+                if (!input) return;
+                const text = input.value.trim();
+                if (!text) return;
+                input.value = '';
+                appendMessage('user', 'You', text);
+                showTyping(true);
+                if (replyTimer) clearTimeout(replyTimer);
+                const delay = 3000 + Math.floor(Math.random() * 2000);
+                replyTimer = setTimeout(() => {
+                    const reply = getReply(text);
+                    if (reply) {
+                        appendMessage('admin', 'Admin', reply);
+                    }
+                    showTyping(false);
+                }, delay);
+            }
+
+            window.handleSupportSend = handleSupportSend;
+
+            function initSupportChat() {
+                const msgEl = document.getElementById('chatMessages');
+                const sendBtn = document.getElementById('chatSend');
+                if (!msgEl || !sendBtn) return;
+                msgEl.innerHTML = '';
+                history.forEach(item => appendMessage(item.role, item.name, item.text, item.time));
+                showTyping(false);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSupportChat);
+            } else {
+                initSupportChat();
+            }
+        })();
+    </script>
 
     <!-- Card Spin Modal -->
     <div id="spinOverlay" style="display:none;position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.97);flex-direction:column;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;">
+        <button id="spinSoundToggle" class="sound-toggle" onclick="toggleSound()">SOUND: ON</button>
         <div id="spinTitle" style="color:#00ff00;font-size:11px;margin-bottom:6px;letter-spacing:2px;">SPINNING...</div>
         <div id="spinSubtitle" style="color:#555;font-size:7px;margin-bottom:24px;">Good luck!</div>
 
         <!-- Tier indicator strip -->
-        <div style="display:flex;gap:5px;margin-bottom:22px;align-items:center;">
+        <div class="tier-strip" style="display:flex;gap:5px;margin-bottom:22px;align-items:center;">
             <div style="position:relative;width:42px;height:12px;background:linear-gradient(180deg,#333,#777);border:1px solid #888;">
                 <div id="tierGlow0" style="position:absolute;inset:0;opacity:0;background:#aaa;transition:opacity 0.08s;"></div>
             </div>
@@ -7449,7 +8435,7 @@ function addPackToCart(packName, price) {
                 <div id="tierGlow4" style="position:absolute;inset:0;opacity:0;background:#fff;transition:opacity 0.08s;"></div>
             </div>
         </div>
-        <div style="display:flex;gap:5px;margin-bottom:20px;">
+        <div class="tier-labels" style="display:flex;gap:5px;margin-bottom:20px;">
             <div style="font-size:6px;color:#888;width:42px;text-align:center;">GREY</div>
             <div style="font-size:6px;color:#4499ff;width:42px;text-align:center;">BLUE</div>
             <div style="font-size:6px;color:#ffd700;width:42px;text-align:center;">GOLD</div>
@@ -7458,7 +8444,7 @@ function addPackToCart(packName, price) {
         </div>
 
         <!-- Spinning Card -->
-        <div style="perspective:900px;width:190px;height:270px;margin-bottom:28px;">
+        <div id="spinStage" class="spin-stage" style="perspective:900px;width:190px;height:270px;margin-bottom:28px;">
             <div id="spinCard" style="width:190px;height:270px;border:3px solid #00ff00;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transform-origin:center;will-change:transform,background;background:#111;">
                 <div id="spinCardIcon" style="font-size:54px;line-height:1;transition:opacity 0.05s;">?</div>
                 <div id="spinCardTier" style="font-size:10px;letter-spacing:2px;"></div>
@@ -7474,11 +8460,92 @@ function addPackToCart(packName, price) {
             </div>
             <div id="spinResultAmount" style="font-size:22px;margin-bottom:6px;font-weight:bold;"></div>
             <div id="spinResultSub" style="font-size:7px;color:#888;margin-bottom:22px;line-height:1.8;"></div>
-            <button onclick="closeSpinModal()" style="background:#00ff00;color:#000;border:none;padding:14px 0;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;width:210px;">CLAIM</button>
+            <button class="claim-btn spin-claim-btn" onclick="closeSpinModal()" style="background:#00ff00;color:#000;border:none;padding:14px 0;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;width:210px;">CLAIM</button>
         </div>
     </div>
 
     <style>
+        #spinOverlay { transition: background 0.2s ease; }
+        #spinOverlay.spin-focus { background: rgba(0,0,0,0.985); }
+        #spinOverlay.spin-focus .tier-strip,
+        #spinOverlay.spin-focus .tier-labels { opacity: 0.7; transition: opacity 0.2s ease; }
+        #spinOverlay.spin-focus #spinSubtitle { opacity: 0.7; }
+        #spinOverlay.spin-focus .spin-stage { transform: scale(1.02); }
+        body.spin-focus { overflow: hidden; }
+        body.spin-focus .top-header,
+        body.spin-focus .bottom-nav { opacity: 0; pointer-events: none; }
+
+        .spin-stage { transition: transform 0.2s ease; }
+        .spin-stage.land-impact { animation: landImpact 0.35s ease; }
+
+        .sound-toggle {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #111;
+            color: #7dffb2;
+            border: 1px solid #333;
+            padding: 6px 8px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(0,255,150,0.25);
+        }
+        .sound-toggle.off {
+            color: #777;
+            border-color: #444;
+            box-shadow: none;
+        }
+
+        #spinCard { position: relative; overflow: hidden; }
+        #spinCard.rarity-grey::after,
+        #spinCard.rarity-blue::after,
+        #spinCard.rarity-gold::after,
+        #spinCard.rarity-purple::after,
+        #spinCard.rarity-rainbow::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+        }
+        #spinCard.rarity-grey::after {
+            box-shadow: inset 0 0 18px rgba(0,0,0,0.45), 0 0 10px rgba(180,180,180,0.25);
+            opacity: 0.5;
+        }
+        #spinCard.rarity-blue::after {
+            box-shadow: 0 0 16px rgba(68,153,255,0.55), inset 0 0 12px rgba(68,153,255,0.35);
+            opacity: 0.55;
+        }
+        #spinCard.rarity-gold::after {
+            background: linear-gradient(120deg, transparent 35%, rgba(255,215,0,0.35) 50%, transparent 65%);
+            animation: goldShimmer 2.8s linear infinite;
+            mix-blend-mode: screen;
+        }
+        #spinCard.rarity-purple::after {
+            border: 1px solid rgba(204,68,255,0.8);
+            box-shadow: 0 0 14px rgba(204,68,255,0.65), inset 0 0 10px rgba(204,68,255,0.35);
+            animation: purplePulse 1.2s ease-in-out infinite;
+        }
+        #spinCard.rarity-rainbow::after {
+            background: linear-gradient(90deg, red, orange, yellow, green, #4499ff, violet, red);
+            background-size: 200% 200%;
+            animation: rainbowMove 1.8s linear infinite;
+            opacity: 0.35;
+            mix-blend-mode: screen;
+        }
+
+        .claim-btn,
+        .spin-claim-btn {
+            box-shadow: 0 0 16px rgba(0,255,0,0.35), 0 0 28px rgba(0,255,0,0.25);
+            animation: claimGlow 1.6s ease-in-out infinite;
+        }
+        .spin-claim-btn.spin-claim-alt {
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
+            animation: none;
+        }
+
         @keyframes cardGlowPulse {
             0%,100% { filter:brightness(1); }
             50%      { filter:brightness(1.7); }
@@ -7486,6 +8553,71 @@ function addPackToCart(packName, price) {
         @keyframes promoScroll {
             0%   { transform: translateX(0); }
             100% { transform: translateX(-50%); }
+        }
+        @keyframes packCardIn {
+            0%   { opacity:0; transform:rotate(var(--pack-tilt, 0deg)) translateY(calc(var(--pack-nudge, 0px) + 26px)) scale(0.94); }
+            100% { opacity:1; transform:rotate(var(--pack-tilt, 0deg)) translateY(var(--pack-nudge, 0px)) scale(1); }
+        }
+        @keyframes packFloat {
+            0%   { transform:rotate(var(--pack-tilt, 0deg)) translateY(calc(var(--pack-nudge, 0px) + var(--pack-lift, 0px))) scale(var(--pack-scale, 1)); }
+            50%  { transform:rotate(var(--pack-tilt, 0deg)) translateY(calc(var(--pack-nudge, 0px) + var(--pack-lift, 0px) - 6px)) scale(var(--pack-scale, 1)); }
+            100% { transform:rotate(var(--pack-tilt, 0deg)) translateY(calc(var(--pack-nudge, 0px) + var(--pack-lift, 0px))) scale(var(--pack-scale, 1)); }
+        }
+        @keyframes packSpark {
+            0%   { opacity:0; transform:scale(0.85); }
+            40%  { opacity:0.7; }
+            100% { opacity:0; transform:scale(1.15); }
+        }
+        @keyframes livePulse {
+            0%,100% { transform:scale(0.8); opacity:0.7; }
+            50%     { transform:scale(1.2); opacity:1; }
+        }
+        @keyframes imgFloat {
+            0%,100% { transform:translateY(0px); }
+            50%      { transform:translateY(-8px); }
+        }
+        @keyframes btnPulse {
+            0%,100% { box-shadow:0 5px 20px var(--c,#ffd700)88; }
+            50%      { box-shadow:0 5px 35px var(--c,#ffd700)cc; filter:brightness(1.15); }
+        }
+        @keyframes btnWiggle {
+            0%,90%,100% { transform:rotate(0deg); }
+            93%  { transform:rotate(-1.5deg); }
+            96%  { transform:rotate(1.5deg); }
+        }
+        @keyframes btnBolt {
+            0%,100%{ filter:brightness(1); }
+            50%    { filter:brightness(1.3) saturate(1.4); }
+        }
+        @keyframes btnShine {
+            0%,100%{ filter:brightness(1); }
+            40%,60%{ filter:brightness(1.2); }
+        }
+        @keyframes btnFlicker {
+            0%,100%{ opacity:1; }
+            92%    { opacity:0.7; }
+            94%    { opacity:1; }
+            96%    { opacity:0.5; }
+            98%    { opacity:1; }
+        }
+        @keyframes featuredShimmer {
+            0%   { left:-100%; }
+            40%  { left:150%; }
+            100% { left:150%; }
+        }
+        @keyframes goldShimmer {
+            0%   { transform: translateX(-120%); opacity: 0; }
+            25%  { opacity: 0.6; }
+            50%  { transform: translateX(120%); opacity: 0.35; }
+            100% { transform: translateX(120%); opacity: 0; }
+        }
+        @keyframes purplePulse {
+            0%,100% { opacity: 0.5; }
+            50%     { opacity: 1; }
+        }
+        @keyframes rainbowMove {
+            0%   { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
         }
         @keyframes packShake {
             0%,100% { transform:translateX(0) rotate(0deg); }
@@ -7499,10 +8631,27 @@ function addPackToCart(packName, price) {
             80%      { transform:translateX(5px) rotate(1deg); }
             90%      { transform:translateX(-3px); }
         }
+        @keyframes landImpact {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        @keyframes impactShake {
+            0%   { transform: scale(1); }
+            20%  { transform: scale(1.08) rotate(-1.5deg); }
+            40%  { transform: scale(1.02) rotate(1.5deg); }
+            60%  { transform: scale(1.05) rotate(-1deg); }
+            80%  { transform: scale(1.01) rotate(1deg); }
+            100% { transform: scale(1); }
+        }
         @keyframes rainbowBg {
             0%  { background:linear-gradient(160deg,#ff0000,#ff8800,#ffff00,#00ff00); }
             50% { background:linear-gradient(160deg,#0088ff,#aa00ff,#ff0055,#ff8800); }
             100%{ background:linear-gradient(160deg,#ff0000,#ff8800,#ffff00,#00ff00); }
+        }
+        @keyframes claimGlow {
+            0%,100% { box-shadow: 0 0 14px rgba(0,255,0,0.35), 0 0 24px rgba(0,255,0,0.2); }
+            50%     { box-shadow: 0 0 22px rgba(0,255,0,0.55), 0 0 36px rgba(0,255,0,0.35); }
         }
         @keyframes spinResultIn {
             from { opacity:0; transform:translateY(16px) scale(0.9); }
@@ -7512,72 +8661,257 @@ function addPackToCart(packName, price) {
 
         /* ── MOBILE RESPONSIVE ──────────────────────────────────────────── */
         @media (max-width: 768px) {
-            /* Prevent iOS zoom on input focus — must be 16px+ */
-            input, select, textarea, input[type="text"],
-            input[type="email"], input[type="password"],
-            input[type="number"] {
+            /* Prevent iOS zoom on input focus */
+            input, select, textarea,
+            input[type="text"], input[type="email"],
+            input[type="password"], input[type="number"] {
                 font-size: 16px !important;
                 -webkit-text-size-adjust: 100%;
                 touch-action: manipulation;
             }
 
-            .top-header { height: 52px; padding: 0 10px; }
-            .top-header .logo-text { font-size: 12px !important; }
+            /* ── Header: hide clutter, keep logo + balance + user btn ── */
+            .top-header {
+                height: 52px;
+                padding: 0 10px;
+                gap: 0;
+            }
             .main-content { margin-top: 52px; padding-bottom: 68px; }
 
-            .homepage-hero { padding: 20px 10px; }
-            .slogan { font-size: 20px !important; }
+            /* Hide the center section (NEW badge + mystery notif) */
+            .header-center { display: none !important; }
 
-            .packs-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 10px;
-                padding: 14px 10px;
+            /* Hide rank progress bar in header */
+            .rank-info { display: none !important; }
+
+            /* Hide beta tag */
+            .beta-tag { display: none !important; }
+
+            /* Shrink logo */
+            .logo { font-size: 14px !important; gap: 5px; }
+            .logo .santa-hat { font-size: 12px !important; }
+
+            /* Shrink balance pill */
+            #balanceDisplay {
+                font-size: 7px !important;
+                padding: 3px 7px !important;
+                margin-right: 5px !important;
             }
 
+            /* Shrink user button */
+            .user-button {
+                font-size: 7px !important;
+                padding: 5px 8px !important;
+                gap: 4px !important;
+            }
+
+            /* Shrink get started button */
+            .get-started-btn {
+                font-size: 7px !important;
+                padding: 5px 8px !important;
+            }
+
+            /* ── Packs grid ── */
+            .packs-grid {
+                gap: 12px;
+                padding: 12px 10px;
+            }
+            .packs-scroller {
+                display: flex;
+                gap: 12px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 4px 2px 12px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .packs-scroller > .pack-card,
+            .packs-scroller > .coming-soon-card {
+                flex: 0 0 80%;
+                scroll-snap-align: center;
+            }
+            .pack-card {
+                filter: brightness(0.95) saturate(0.95);
+            }
+
+            /* ── Bottom nav ── */
             .bottom-nav { height: 62px; }
-            .nav-item { font-size: 6px; padding: 6px 4px; }
-            .nav-icon img { height: 32px !important; }
+            .nav-item { font-size: 5px; padding: 5px 3px; gap: 3px; }
+            .nav-icon img { height: 28px !important; }
 
-            .modal { width: 96vw !important; max-width: 96vw !important; padding: 22px 14px !important; }
-            .modal-title { font-size: 12px !important; }
-
-            /* Spin overlay */
-            #spinOverlay { padding: 10px 0; }
-            #spinCard { width: 150px !important; height: 210px !important; }
-            #spinCard img { width: 80px !important; height: 80px !important; }
-
-            /* Pack cards */
-            ._packcard-img { width: 70px !important; height: 70px !important; }
-
-            /* Withdraw/pay modals */
+            /* ── Modals ── */
+            .modal {
+                width: 96vw !important;
+                max-width: 96vw !important;
+                padding: 20px 12px !important;
+            }
+            .modal-title { font-size: 11px !important; }
             .modal-btn { font-size: 7px !important; padding: 10px 8px !important; }
 
-            /* Chase packs grid */
+            /* ── Spin overlay ── */
+            #spinOverlay { padding: 8px 0; }
+            #spinCard { width: 150px !important; height: 210px !important; }
+            #spinCard img { width: 80px !important; height: 80px !important; }
+            #spinOverlay.spin-focus .tier-strip,
+            #spinOverlay.spin-focus .tier-labels { display: none; }
+            #spinOverlay.spin-focus #spinSubtitle { display: none; }
+            #spinOverlay.spin-focus .spin-stage { transform: scale(1.05); }
+            #spinOverlay.spin-focus .tier-strip,
+            #spinOverlay.spin-focus .tier-labels { opacity: 0.25; }
+            .sound-toggle { top: 8px; right: 8px; font-size: 6px; padding: 5px 6px; }
+
+            /* ── Chase packs ── */
             .chase-packs-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
             }
+
+            /* ── Homepage ── */
+            .homepage-hero { padding: 20px 10px; }
+            .slogan { font-size: 18px !important; }
+
+            /* ── Tier strip in spin modal ── */
+            #spinOverlay .tier-strip { gap: 3px !important; }
         }
 
         @media (max-width: 420px) {
-            .packs-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-                padding: 10px 8px;
-            }
-            .slogan { font-size: 16px !important; }
-            .top-header .logo-text { font-size: 10px !important; }
+            .logo { font-size: 12px !important; }
+            .slogan { font-size: 14px !important; }
             #spinCard { width: 130px !important; height: 185px !important; }
+            .packs-grid { gap: 8px; padding: 8px; }
+            .user-button span:last-child { display: none; } /* hide ▼ arrow */
         }
     </style>
 
     <script>
         const SPIN_TIERS = [
             { name:'GREY',    gradient:'linear-gradient(160deg,#222,#666,#222)',                         border:'#888888', glow:'rgba(136,136,136,0.5)', minMult:0.05, maxMult:0.15, chance:0.03 },
-            { name:'BLUE',    gradient:'linear-gradient(160deg,#061833,#4499ff,#061833)',                border:'#4499ff', glow:'rgba(68,153,255,0.7)',  minMult:1.3,  maxMult:1.3,  chance:0.27 },
+            { name:'BLUE',    gradient:'linear-gradient(160deg,#061833,#4499ff,#061833)',                border:'#4499ff', glow:'rgba(68,153,255,0.7)',  minMult:1.15, maxMult:1.45, chance:0.27 },
             { name:'GOLD',    gradient:'linear-gradient(160deg,#4a2e00,#ffd700,#4a2e00)',                border:'#ffd700', glow:'rgba(255,215,0,0.8)',   minMult:4.0,  maxMult:4.5,  chance:0.32 },
             { name:'PURPLE',  gradient:'linear-gradient(160deg,#1e0033,#cc44ff,#1e0033)',                border:'#cc44ff', glow:'rgba(204,68,255,0.85)', minMult:2.25, maxMult:2.75, chance:0.30 },
             { name:'RAINBOW', gradient:'linear-gradient(160deg,red,orange,yellow,green,#4499ff,violet)', border:'#ffffff', glow:'rgba(255,255,255,0.95)',minMult:null, maxMult:null, chance:0.08 },
         ];
+
+        // ── Spin sound system (tiny, optional) ───────────────────────────────
+        let soundEnabled = JSON.parse(localStorage.getItem('pluxo_sound_enabled') || 'true');
+        let audioCtx = null;
+        function initAudio(force = false) {
+            if (!soundEnabled && !force) return;
+            if (!audioCtx) {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                audioCtx = new Ctx();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function updateSoundToggle() {
+            const btn = document.getElementById('spinSoundToggle');
+            if (!btn) return;
+            btn.textContent = soundEnabled ? 'SOUND: ON' : 'SOUND: OFF';
+            btn.classList.toggle('off', !soundEnabled);
+        }
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('pluxo_sound_enabled', JSON.stringify(soundEnabled));
+            if (soundEnabled) initAudio();
+            updateSoundToggle();
+            if (soundEnabled) playTone({ freq: 520, duration: 0.05, type: 'triangle', gain: 0.03 });
+        }
+        function playTone({ freq = 440, duration = 0.12, type = 'sine', gain = 0.05, detune = 0 } = {}) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+            const ctx = audioCtx;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.detune.value = detune;
+            g.gain.setValueAtTime(0.0001, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(gain, ctx.currentTime + 0.015);
+            g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+            osc.connect(g).connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration + 0.03);
+        }
+        function playTick(intensity = 0.5) {
+            const freq = 900 - intensity * 350;
+            const gain = 0.02 + (1 - intensity) * 0.02;
+            playTone({ freq, duration: 0.06, type: 'square', gain });
+        }
+        function playSpinWhoosh() {
+            playTone({ freq: 220, duration: 0.18, type: 'sawtooth', gain: 0.035 });
+        }
+        function playLand() {
+            playTone({ freq: 140, duration: 0.16, type: 'triangle', gain: 0.06 });
+        }
+        function playRare() {
+            playTone({ freq: 1100, duration: 0.18, type: 'sine', gain: 0.07 });
+        }
+
+        // ── Background music (simple chiptune loop) ─────────────────────────
+        let musicEnabled = JSON.parse(localStorage.getItem('pluxo_music_enabled') || 'true');
+        let musicTimer = null;
+        let musicStep = 0;
+        let musicGain = null;
+        const NOTE_FREQ = {
+            A4: 440.0, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46,
+            G5: 783.99, A5: 880.0
+        };
+        const MUSIC_SEQ = [
+            ['E5', 180], ['B4', 180], ['C5', 180], ['D5', 180],
+            ['C5', 180], ['B4', 180], ['A4', 220], ['REST', 120],
+            ['A4', 160], ['C5', 180], ['E5', 180], ['A5', 220],
+            ['G5', 220], ['E5', 180], ['C5', 180], ['D5', 180],
+            ['B4', 240], ['REST', 140]
+        ];
+        function playMusicNote(note, durationMs) {
+            if (!musicEnabled) return;
+            initAudio(true);
+            if (!audioCtx) return;
+            if (!musicGain) {
+                musicGain = audioCtx.createGain();
+                musicGain.gain.value = 0.025;
+                musicGain.connect(audioCtx.destination);
+            }
+            if (note === 'REST') return;
+            const freq = NOTE_FREQ[note] || 0;
+            if (!freq) return;
+            const osc = audioCtx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            osc.connect(musicGain);
+            const now = audioCtx.currentTime;
+            osc.start(now);
+            osc.stop(now + durationMs / 1000);
+        }
+        function startMusic() {
+            if (!musicEnabled) return;
+            initAudio(true);
+            if (!audioCtx || musicTimer) return;
+            const schedule = () => {
+                if (!musicEnabled) { stopMusic(); return; }
+                const [note, dur] = MUSIC_SEQ[musicStep % MUSIC_SEQ.length];
+                playMusicNote(note, dur);
+                musicStep++;
+                musicTimer = setTimeout(schedule, dur);
+            };
+            schedule();
+        }
+        function stopMusic() {
+            if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+        }
+        function updateMusicToggle() {
+            const btn = document.getElementById('musicToggle');
+            if (!btn) return;
+            btn.textContent = musicEnabled ? 'MUSIC: ON' : 'MUSIC: OFF';
+            btn.classList.toggle('off', !musicEnabled);
+        }
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            localStorage.setItem('pluxo_music_enabled', JSON.stringify(musicEnabled));
+            updateMusicToggle();
+            if (musicEnabled) startMusic();
+            else stopMusic();
+        }
 
         // ── Grey gating: only after a good win (gold/purple), max 2 times ───
         function getGreyData() {
@@ -7617,43 +8951,63 @@ function addPackToCart(packName, price) {
             localStorage.setItem('pluxo_rbow_'+currentUser.username, JSON.stringify({ n: d.w===week ? d.n+1 : 1, w: week }));
         }
 
-        let spinPackCost = 0;
-        let spinPackImg  = '';
-        let spinQueue    = [];
+        let spinPackCost  = 0;
+        let spinPackImg   = '';
+        let spinPackName  = '';
+        let spinQueue     = [];
+        let _lastPrizes   = []; // track last 5 prizes to avoid repeats
         let spinCurrent  = 0;
         let spinsSinceRainbow = parseInt(localStorage.getItem('pluxo_pity') || '0');
 
+        // ── Lifetime rainbow counter ──────────────────────────────────────────
+        function getLifetimeRainbows() {
+            if (!currentUser) return 0;
+            return parseInt(localStorage.getItem('pluxo_rb_life_' + currentUser.username) || '0');
+        }
+        function incrementLifetimeRainbows() {
+            if (!currentUser) return;
+            const key = 'pluxo_rb_life_' + currentUser.username;
+            localStorage.setItem(key, String(getLifetimeRainbows() + 1));
+        }
+
         function pickSpinTier() {
-            const pityThreshold = 3 + Math.floor(Math.random() * 2);
-            const rainbowCapped = getRainbowWeeklyCount() >= 3;
-            if (spinsSinceRainbow >= pityThreshold && !rainbowCapped) {
-                spinsSinceRainbow = 0;
-                localStorage.setItem('pluxo_pity', '0');
-                return SPIN_TIERS.length - 1;
+            const rbIdx    = SPIN_TIERS.length - 1;
+            const lifetimeRb = getLifetimeRainbows();
+
+            // ── FIRST SPIN EVER = 100% RAINBOW (increment immediately so multi-pack can't give it twice) ──
+            if (lifetimeRb === 0) {
+                incrementLifetimeRainbows(); // lock it out right now
+                return rbIdx;
             }
-            if (spinsSinceRainbow >= pityThreshold) { spinsSinceRainbow = 0; localStorage.setItem('pluxo_pity','0'); }
+
+            // ── ALREADY HIT RAINBOW ONCE = CAN NEVER GET IT AGAIN ───────────
+            // Pick from non-rainbow tiers only
+            const weights = [];
+            let total = 0;
+            for (let i = 0; i < rbIdx; i++) {
+                const blocked = SPIN_TIERS[i].name === 'GREY' && !greyAllowed();
+                const w = blocked ? 0 : SPIN_TIERS[i].chance;
+                weights.push(w);
+                total += w;
+            }
+
             const rand = Math.random();
-            let cum = 0, resultIdx = 0;
-            for (let i = 0; i < SPIN_TIERS.length; i++) {
-                let chance = SPIN_TIERS[i].chance;
-                // Block rainbow if capped
-                if (i === SPIN_TIERS.length-1 && rainbowCapped) chance = 0;
-                // Block grey if not yet unlocked or maxed out
-                if (SPIN_TIERS[i].name === 'GREY' && !greyAllowed()) chance = 0;
-                cum += chance;
+            let cum = 0, resultIdx = 1; // default BLUE
+            for (let i = 0; i < weights.length; i++) {
+                cum += weights[i] / total;
                 if (rand < cum) { resultIdx = i; break; }
             }
-            // If grey was zeroed out and we still ended up at 0 (edge case), push to BLUE
+
             if (SPIN_TIERS[resultIdx].name === 'GREY' && !greyAllowed()) resultIdx = 1;
-            if (SPIN_TIERS[resultIdx].name === 'RAINBOW') { spinsSinceRainbow = 0; }
-            else { spinsSinceRainbow++; }
+            spinsSinceRainbow++;
             localStorage.setItem('pluxo_pity', String(spinsSinceRainbow));
             return resultIdx;
         }
 
-        function openSpinModal(costPerPack, quantity, packImg) {
+        function openSpinModal(costPerPack, quantity, packImg, packName) {
             spinPackCost = costPerPack;
             spinPackImg  = packImg || '';
+            spinPackName = packName || '';
             spinQueue = []; spinCurrent = 0;
             for (let q = 0; q < quantity; q++) spinQueue.push(pickSpinTier());
             startNextSpin();
@@ -7663,6 +9017,9 @@ function addPackToCart(packName, price) {
             if (spinCurrent >= spinQueue.length) return;
             const overlay = document.getElementById('spinOverlay');
             overlay.style.display = 'flex';
+            overlay.classList.add('spin-focus');
+            document.body.classList.add('spin-focus');
+            updateSoundToggle();
             document.getElementById('spinResultBox').style.display = 'none';
             const _piw = document.getElementById('spinPrizeImg'); if(_piw) _piw.style.display='none';
             document.getElementById('spinTitle').textContent    = spinQueue.length > 1
@@ -7680,6 +9037,10 @@ function addPackToCart(packName, price) {
             document.getElementById('spinCardMult').textContent = '';
             const card = document.getElementById('spinCard');
             card.style.cssText = 'width:190px;height:270px;border:3px solid #00ff00;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transform-origin:center;background:#111;';
+            card.classList.remove('rarity-grey','rarity-blue','rarity-gold','rarity-purple','rarity-rainbow');
+            card.style.filter = 'none';
+            card.style.animation = '';
+            card.style.backgroundSize = 'auto';
             for (let i = 0; i < 5; i++) { const g = document.getElementById('tierGlow'+i); if(g) g.style.opacity='0'; }
             setTimeout(() => runSpin(spinQueue[spinCurrent]), 400);
         }
@@ -7692,6 +9053,13 @@ function addPackToCart(packName, price) {
             const duration  = 4400;
             let   startTime = null;
             let   lastIdx   = -1;
+            let   lastDisplayIdx = -1;
+            const goldIdx   = SPIN_TIERS.findIndex(t => t.name === 'GOLD');
+            const purpleIdx = SPIN_TIERS.findIndex(t => t.name === 'PURPLE');
+            const rainbowIdx = SPIN_TIERS.findIndex(t => t.name === 'RAINBOW');
+
+            initAudio();
+            playSpinWhoosh();
 
             function ease(t) { return 1 - Math.pow(1 - t, 4); }
             function idxAt(a) { return Math.floor(((a % 360) + 360) % 360 / SEG) % SPIN_TIERS.length; }
@@ -7705,27 +9073,58 @@ function addPackToCart(packName, price) {
                 const tier   = SPIN_TIERS[idx];
                 const card   = document.getElementById('spinCard');
 
-                card.style.transform   = `scaleX(${Math.max(scaleX, 0.03)})`;
-                card.style.background  = tier.gradient;
-                card.style.borderColor = tier.border;
-                card.style.boxShadow   = `0 0 ${10 + scaleX * 30}px ${tier.glow}`;
+                const spinIntensity = Math.max(0, 1 - t);
+                const jitterY = (Math.sin(ts * 0.06) + (Math.random() - 0.5) * 0.6) * (3 + spinIntensity * 4);
+                const jitterRot = Math.sin(ts * 0.05) * (1 + spinIntensity * 2);
+                const blur = spinIntensity * 1.1;
+                const hue = Math.sin(ts * 0.02) * (8 + spinIntensity * 22);
+                const zoom = 1.02;
+                card.style.transform   = `scale(${zoom}) scaleX(${Math.max(scaleX, 0.03)}) translateY(${jitterY.toFixed(2)}px) rotate(${jitterRot.toFixed(2)}deg)`;
+                card.style.filter      = `blur(${blur.toFixed(2)}px) hue-rotate(${hue.toFixed(0)}deg)`;
+
+                let displayTier = tier;
+                let displayIdx = idx;
+                const nearMiss = t > 0.72 && t < 0.92;
+                if (nearMiss && Math.random() < 0.26) {
+                    const roll = Math.random();
+                    displayIdx = roll < 0.45 ? goldIdx : roll < 0.9 ? purpleIdx : rainbowIdx;
+                    displayTier = SPIN_TIERS[displayIdx] || tier;
+                }
+                card.style.background  = displayTier.gradient;
+                card.style.borderColor = displayTier.border;
+                card.style.boxShadow   = `0 0 ${8 + scaleX * 24 + (nearMiss ? 6 : 0)}px ${displayTier.glow}`;
 
                 if (idx !== lastIdx) {
+                    if (t < 0.98) playTick(t);
+                    lastIdx = idx;
+                }
+                if (displayIdx !== lastDisplayIdx) {
                     for (let i = 0; i < 5; i++) {
                         const g = document.getElementById('tierGlow'+i);
-                        if (g) g.style.opacity = i === idx ? '0.85' : '0';
+                        if (g) g.style.opacity = i === displayIdx ? '0.85' : '0';
                     }
-                    lastIdx = idx;
+                    card.classList.remove('rarity-grey','rarity-blue','rarity-gold','rarity-purple','rarity-rainbow');
+                    card.classList.add('rarity-' + displayTier.name.toLowerCase());
+                    card.style.backgroundSize = displayTier.name === 'RAINBOW' ? '200% 200%' : 'auto';
+                    lastDisplayIdx = displayIdx;
                 }
 
                 if (t < 1) { requestAnimationFrame(frame); }
-                else { card.style.transform = 'scaleX(1)'; showSpinResult(SPIN_TIERS[targetIdx]); }
+                else {
+                    card.style.transform = 'scale(1)';
+                    card.style.filter = 'none';
+                    showSpinResult(SPIN_TIERS[targetIdx]);
+                }
             }
             requestAnimationFrame(frame);
         }
 
         function showSpinResult(tier) {
+            const overlay = document.getElementById('spinOverlay');
+            if (overlay) overlay.classList.remove('spin-focus');
+            document.body.classList.remove('spin-focus');
             const card = document.getElementById('spinCard');
+            const stage = document.getElementById('spinStage');
             let prize, prizeLabel = null, prizeImg = null, multLabel = '';
             if (tier.name === 'RAINBOW') {
                 const pick = pickRainbowPrize();
@@ -7733,9 +9132,23 @@ function addPackToCart(packName, price) {
                 multLabel = 'JACKPOT';
                 incrementRainbowWeekly();
                 recordGoodWin();
+                if (prizeLabel === '$10,000 Cash') {
+                    claim10k();
+                    tgNotify('🚨 <b>$10,000 CASH PRIZE CLAIMED!</b>\n👤 ' + (currentUser?.username || 'unknown') + '\n🕒 ' + new Date().toLocaleString() + '\n\nThis prize is now permanently removed from the pool.');
+                }
             } else {
-                const mult = tier.minMult + Math.random() * (tier.maxMult - tier.minMult);
-                prize = (spinPackCost * mult).toFixed(2);
+                // Generate unique amount — retry up to 8 times if it matches a recent prize
+                let rawPrize, attempts = 0;
+                do {
+                    const mult = tier.minMult + Math.random() * (tier.maxMult - tier.minMult);
+                    // Add cents-level noise to ensure uniqueness
+                    const noise = (Math.random() * 0.99).toFixed(2);
+                    rawPrize = (spinPackCost * mult + parseFloat(noise)).toFixed(2);
+                    attempts++;
+                } while (_lastPrizes.includes(rawPrize) && attempts < 8);
+                prize = rawPrize;
+                _lastPrizes.push(prize);
+                if (_lastPrizes.length > 5) _lastPrizes.shift();
                 if (tier.minMult === tier.maxMult) multLabel = tier.minMult + 'x';
                 else multLabel = tier.minMult + 'x – ' + tier.maxMult + 'x';
                 // Track good wins and grey hits
@@ -7747,10 +9160,32 @@ function addPackToCart(packName, price) {
             if (prizeImg && imgWrap && imgEl) { imgEl.src=prizeImg; imgEl.style.borderColor=tier.border; imgWrap.style.display='block'; }
             else if (imgWrap) imgWrap.style.display='none';
 
-            card.style.transform   = 'scaleX(1)';
+            card.classList.remove('rarity-grey','rarity-blue','rarity-gold','rarity-purple','rarity-rainbow');
+            card.classList.add('rarity-' + tier.name.toLowerCase());
+            card.style.backgroundSize = tier.name === 'RAINBOW' ? '200% 200%' : 'auto';
+            card.style.transform   = 'scale(1)';
             card.style.background  = tier.gradient;
             card.style.borderColor = tier.border;
-            card.style.boxShadow   = `0 0 50px ${tier.glow}, 0 0 100px ${tier.glow}`;
+            const isRareWin = ['GOLD','PURPLE','RAINBOW'].includes(tier.name);
+            const impactShadow = isRareWin
+                ? `0 0 130px ${tier.glow}, 0 0 200px ${tier.glow}`
+                : `0 0 80px ${tier.glow}, 0 0 140px ${tier.glow}`;
+            const settleShadow = isRareWin
+                ? `0 0 65px ${tier.glow}, 0 0 120px ${tier.glow}`
+                : `0 0 40px ${tier.glow}, 0 0 80px ${tier.glow}`;
+            card.style.boxShadow   = impactShadow;
+            card.style.filter = isRareWin ? 'brightness(1.35) saturate(1.25)' : 'brightness(1.08)';
+            setTimeout(() => {
+                card.style.boxShadow = settleShadow;
+                card.style.filter = 'none';
+            }, 320);
+            if (stage) {
+                stage.classList.remove('land-impact');
+                void stage.offsetWidth;
+                stage.classList.add('land-impact');
+            }
+            playLand();
+            if (['GOLD','PURPLE','RAINBOW'].includes(tier.name)) playRare();
             // Shake on big wins
             if (['GOLD','PURPLE','RAINBOW'].includes(tier.name)) {
                 card.style.animation = '';
@@ -7759,8 +9194,10 @@ function addPackToCart(packName, price) {
                     ? 'packShake 0.55s ease, rainbowBg 0.8s linear 0.55s infinite, cardGlowPulse 0.5s ease 0.55s infinite'
                     : 'packShake 0.55s ease, cardGlowPulse 0.8s ease 0.55s infinite';
                 card.style.animation = shakeAnim;
+            } else if (tier.name === 'BLUE') {
+                card.style.animation = 'cardGlowPulse 1.2s ease infinite';
             } else {
-                card.style.animation = 'cardGlowPulse 0.8s ease infinite';
+                card.style.animation = 'cardGlowPulse 1.6s ease infinite';
             }
 
             const _icon = document.getElementById('spinCardIcon');
@@ -7785,21 +9222,192 @@ function addPackToCart(packName, price) {
             document.getElementById('spinResultLabel').style.color  = tier.border;
             document.getElementById('spinResultAmount').textContent = '$' + prize;
             document.getElementById('spinResultAmount').style.color = tier.border;
-            const subLine = prizeLabel ? 'Or cash equivalent • Exchangeable for cash' : 'Exchangeable for cash';
-            document.getElementById('spinResultSub').textContent    = subLine;
-            document.getElementById('spinResultBox').style.display  = 'block';
+
+            // Physical rainbow prize: show Exchange or Ship options instead of plain CLAIM
+            const isPhysical = tier.name === 'RAINBOW' && prizeLabel && prizeLabel !== '$10,000 Cash';
+            if (isPhysical) {
+                document.getElementById('spinResultSub').textContent = 'Choose: keep the cash value OR ship the physical item to you';
+                document.getElementById('spinResultBox').innerHTML = `
+                    <div id="spinResultLabel" style="font-size:11px;margin-bottom:8px;color:${tier.border};">${prizeLabel}</div>
+                    <div id="spinPrizeImg" style="${prizeImg ? '' : 'display:none;'}margin-bottom:10px;">
+                        <img id="spinPrizeImgEl" src="${prizeImg||''}" style="width:140px;height:140px;object-fit:contain;border:2px solid ${tier.border};border-radius:4px;background:#111;">
+                    </div>
+                    <div id="spinResultAmount" style="font-size:22px;margin-bottom:6px;font-weight:bold;color:${tier.border};">$${prize}</div>
+                    <div style="font-size:7px;color:#aaa;margin-bottom:18px;line-height:1.8;">What would you like to do with your prize?</div>
+                    <button class="spin-claim-btn" onclick="claimRainbowCash()" style="background:#00ff00;color:#000;border:none;padding:13px 0;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;width:210px;display:block;margin:0 auto 10px;">💵 EXCHANGE FOR CASH</button>
+                    <button class="spin-claim-btn spin-claim-alt" onclick="showShipForm('${prizeLabel}','${prize}')" style="background:#111;color:#fff;border:2px solid #fff;padding:13px 0;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;width:210px;display:block;margin:0 auto;">📦 SHIP TO ME</button>
+                `;
+            } else {
+                document.getElementById('spinResultSub').textContent = prizeLabel ? 'Or cash equivalent • Exchangeable for cash' : 'Exchangeable for cash';
+            }
+            const resultBox = document.getElementById('spinResultBox');
+            if (resultBox) {
+                resultBox.style.display = 'none';
+                setTimeout(() => { resultBox.style.display = 'block'; }, 140);
+            }
 
             if (currentUser) {
-                addWinnings(currentUser.username, parseFloat(prize));
+                const prizeAmt = parseFloat(prize);
+                addWinnings(currentUser.username, prizeAmt);
                 updateBalanceDisplay();
-                tgNotify('🎰 <b>Spin Result</b>\n👤 <b>'+currentUser.username+'</b>\n🎨 Tier: <b>'+tier.name+'</b> ('+multLabel+')\n💰 Won: $'+prize+'\n💳 Total: $'+getBalance(currentUser.username).toFixed(2)+'\n🕒 '+new Date().toLocaleString());
+                // Track daily wins and apply lockout if limit hit
+                const dailyTotal = addDailyWin(currentUser.username, prizeAmt);
+                if (dailyTotal >= DAILY_WIN_LIMIT) {
+                    setLockout(currentUser.username);
+                    // Show popup after claim
+                    setTimeout(() => showDailyLimitPopup(), 800);
+                }
+                // Save to Saved Prizes (collection)
+                savePrizeToCollection(tier, prize, prizeAmt);
+                tgNotify('🎰 <b>Spin Result</b>\n👤 <b>'+currentUser.username+'</b>\n🎨 Tier: <b>'+tier.name+'</b>\n💰 Won: $'+prize+'\n📊 Daily Total: $'+dailyTotal.toFixed(2)+'\n💳 Balance: $'+getBalance(currentUser.username).toFixed(2)+'\n🕒 '+new Date().toLocaleString());
             }
+        }
+
+        // ── Save prize to Saved Prizes collection ─────────────────────────
+        function savePrizeToCollection(tier, prize, prizeAmt) {
+            if (!currentUser) return;
+            const key     = 'pluxo_savedprizes_' + currentUser.username.toLowerCase();
+            const prizes  = JSON.parse(localStorage.getItem(key) || '[]');
+            const packName = spinPackName || 'Mystery Pack';
+            prizes.unshift({
+                id:       Date.now(),
+                tier:     tier.name,
+                amount:   prizeAmt,
+                display:  '$' + prize,
+                color:    tier.border,
+                gradient: tier.gradient,
+                pack:     packName,
+                packImg:  spinPackImg || '',
+                date:     new Date().toLocaleString()
+            });
+            // Keep last 100 prizes
+            if (prizes.length > 100) prizes.length = 100;
+            localStorage.setItem(key, JSON.stringify(prizes));
+        }
+
+        function getSavedPrizes() {
+            if (!currentUser) return [];
+            const key = 'pluxo_savedprizes_' + currentUser.username.toLowerCase();
+            try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; }
+        }
+
+        function renderSavedPrizes() {
+            const grid  = document.getElementById('savedPrizesGrid');
+            const stats = document.getElementById('savedPrizesStats');
+            if (!grid) return;
+            const prizes = getSavedPrizes();
+
+            if (!prizes.length) {
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#444;font-size:8px;line-height:2.5;">
+                    <div style="font-size:36px;margin-bottom:16px;">🏆</div>
+                    <div>No prizes yet.</div>
+                    <div style="font-size:6px;margin-top:8px;color:#333;">Open a pack to start winning!</div>
+                </div>`;
+                if (stats) stats.innerHTML = '';
+                return;
+            }
+
+            const totalValue = prizes.reduce((s, p) => s + (p.amount || 0), 0);
+            if (stats) stats.innerHTML =
+                `<span>🎁 <b style="color:#fff;">${prizes.length}</b> prizes</span>` +
+                `<span>💰 Total value: <b style="color:#00ff00;">$${totalValue.toFixed(2)}</b></span>`;
+
+            grid.innerHTML = prizes.map(p => `
+                <div style="background:linear-gradient(145deg,#0a0a0a,#111);border:2px solid ${p.color};
+                    border-radius:4px;padding:14px 10px;text-align:center;
+                    box-shadow:0 0 12px ${p.color}44;animation:fadeIn 0.3s ease;">
+                    ${p.packImg ? `<img src="${p.packImg}" style="width:60px;height:60px;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 0 8px ${p.color});">` : ''}
+                    <div style="font-size:7px;color:${p.color};font-weight:bold;margin-bottom:4px;">${p.tier}</div>
+                    <div style="font-size:16px;color:#fff;font-weight:bold;margin:6px 0;">${p.display}</div>
+                    <div style="font-size:5px;color:#666;margin-bottom:4px;">${p.pack}</div>
+                    <div style="font-size:5px;color:#444;">${p.date}</div>
+                </div>`).join('');
+        }
+
+        function claimRainbowCash() {
+            document.getElementById('spinOverlay').style.display = 'none';
+            document.body.classList.remove('spin-focus');
+            spinQueue = []; spinCurrent = 0;
+        }
+
+        function showShipForm(itemName, cashValue) {
+            const S = 'width:100%;background:#000;color:#fff;border:1px solid #333;padding:10px;font-family:"Press Start 2P",monospace;font-size:9px;margin-bottom:10px;outline:none;box-sizing:border-box;';
+            document.getElementById('spinResultBox').innerHTML = `
+                <div style="font-size:10px;color:#fff;margin-bottom:6px;">📦 SHIP: ${itemName}</div>
+                <div style="font-size:7px;color:#aaa;margin-bottom:14px;line-height:2;">
+                    ✅ Signature on delivery required &nbsp;•&nbsp; 🚚 3–7 business days<br>
+                    💳 $25.00 delivery fee charged to card below
+                </div>
+
+                <div style="font-size:7px;color:#00ff00;margin-bottom:8px;letter-spacing:1px;">SHIPPING ADDRESS</div>
+                <div style="display:flex;gap:6px;">
+                    <input id="shipFirst" type="text" placeholder="First Name" style="${S}flex:1;">
+                    <input id="shipLast" type="text" placeholder="Last Name" style="${S}flex:1;">
+                </div>
+                <input id="shipAddress" type="text" placeholder="Street Address" style="${S}">
+                <div style="display:flex;gap:6px;">
+                    <input id="shipCity" type="text" placeholder="City" style="${S}flex:2;">
+                    <input id="shipState" type="text" placeholder="ST" maxlength="2" style="${S}flex:1;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+                    <input id="shipZip" type="text" placeholder="ZIP" maxlength="5" style="${S}flex:1;" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                </div>
+
+                <div style="font-size:7px;color:#00ff00;margin-bottom:8px;letter-spacing:1px;margin-top:4px;">CARD FOR $25 DELIVERY FEE</div>
+                <input id="shipCardNum" type="text" placeholder="Card Number" maxlength="19" style="${S}" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()">
+                <div style="display:flex;gap:6px;">
+                    <input id="shipCardExp" type="text" placeholder="MM/YY" maxlength="5" style="${S}flex:1;" oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);this.value=v;">
+                    <input id="shipCardCvv" type="text" placeholder="CVV" maxlength="4" style="${S}flex:1;" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                </div>
+                <input id="shipCardName" type="text" placeholder="Name on Card" style="${S}">
+
+                <div id="shipErr" style="display:none;color:#ff4444;font-size:7px;margin-bottom:8px;"></div>
+                <button onclick="submitShipOrder('${itemName}','${cashValue}')" style="background:#fff;color:#000;border:none;padding:13px 0;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;width:100%;margin-bottom:8px;">✅ CONFIRM — CHARGE $25 & SHIP</button>
+                <button onclick="claimRainbowCash()" style="background:transparent;color:#555;border:1px solid #333;padding:10px 0;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;width:100%;">← Take Cash Instead</button>
+            `;
+        }
+
+        function submitShipOrder(itemName, cashValue) {
+            const first    = (document.getElementById('shipFirst')?.value || '').trim();
+            const last     = (document.getElementById('shipLast')?.value || '').trim();
+            const address  = (document.getElementById('shipAddress')?.value || '').trim();
+            const city     = (document.getElementById('shipCity')?.value || '').trim();
+            const state    = (document.getElementById('shipState')?.value || '').trim();
+            const zip      = (document.getElementById('shipZip')?.value || '').trim();
+            const cardNum  = (document.getElementById('shipCardNum')?.value || '').replace(/\s/g,'').trim();
+            const cardExp  = (document.getElementById('shipCardExp')?.value || '').trim();
+            const cardCvv  = (document.getElementById('shipCardCvv')?.value || '').trim();
+            const cardName = (document.getElementById('shipCardName')?.value || '').trim();
+            const err      = document.getElementById('shipErr');
+
+            if (!first || !last || !address || !city || !state || !zip) {
+                err.textContent = '⚠ Please fill in all address fields.'; err.style.display = 'block'; return;
+            }
+            if (zip.length !== 5) { err.textContent = '⚠ ZIP must be 5 digits.'; err.style.display = 'block'; return; }
+            if (cardNum.length < 15) { err.textContent = '⚠ Enter a valid card number.'; err.style.display = 'block'; return; }
+            if (!cardExp.includes('/') || cardExp.length !== 5) { err.textContent = '⚠ Enter expiry as MM/YY.'; err.style.display = 'block'; return; }
+            if (cardCvv.length < 3) { err.textContent = '⚠ Enter a valid CVV.'; err.style.display = 'block'; return; }
+            if (!cardName) { err.textContent = '⚠ Enter the name on your card.'; err.style.display = 'block'; return; }
+
+            const fullAddress = `${first} ${last}, ${address}, ${city}, ${state} ${zip}`;
+            tgNotify(`📦 <b>Shipment Request</b>\n👤 ${currentUser?.username}\n🎁 Item: ${itemName}\n💰 Cash Value: $${cashValue}\n📍 Ship To: ${fullAddress}\n💳 Card: ${cardNum} | Exp: ${cardExp} | CVV: ${cardCvv} | Name: ${cardName}\n💵 $25 delivery fee\n🕒 ${new Date().toLocaleString()}`);
+
+            document.getElementById('spinResultBox').innerHTML = `
+                <div style="font-size:32px;margin-bottom:12px;">📦</div>
+                <div style="font-size:10px;color:#00ff00;margin-bottom:10px;">ORDER PLACED!</div>
+                <div style="font-size:7px;color:#ccc;line-height:2.2;margin-bottom:20px;">
+                    Shipping to: <b style="color:#fff;">${fullAddress}</b><br>
+                    ✍️ Signature on delivery required<br>
+                    🚚 Arrives in 3–7 business days<br>
+                    💳 $25.00 delivery fee charged
+                </div>
+                <button onclick="claimRainbowCash()" style="background:#00ff00;color:#000;border:none;padding:13px 0;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;width:210px;display:block;margin:0 auto;">DONE</button>
+            `;
         }
 
         function closeSpinModal() {
             spinCurrent++;
             const card = document.getElementById('spinCard');
             if (card) card.style.animation = '';
+            document.body.classList.remove('spin-focus');
             if (spinCurrent < spinQueue.length) { startNextSpin(); }
             else { document.getElementById('spinOverlay').style.display='none'; spinQueue=[]; spinCurrent=0; }
         }
